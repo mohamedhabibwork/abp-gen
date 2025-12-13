@@ -188,7 +188,7 @@ func PromptGenerationOptions() (*schema.Options, error) {
 		cultures, err := PromptMultiSelect(
 			"Select localization cultures:",
 			[]string{"en", "ar", "fr", "de", "es", "it", "zh", "ja"},
-			[]string{"en"},
+			[]string{"en", "ar"},
 		)
 		if err != nil {
 			return nil, err
@@ -253,4 +253,3 @@ func DisplaySchemaSummary(sch *schema.Schema) {
 	fmt.Printf("  Validation Type: %s\n", sch.Options.ValidationType)
 	fmt.Printf("  Generate Event Handlers: %v\n", sch.Options.GenerateEventHandlers)
 }
-

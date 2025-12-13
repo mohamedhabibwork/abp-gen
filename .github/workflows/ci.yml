@@ -53,19 +53,51 @@ jobs:
         run: |
           if [ ! -d "cmd/abp-gen" ]; then
             echo "❌ Error: cmd/abp-gen directory not found!"
+            echo "Current directory structure:"
+            find . -type d -maxdepth 2 | head -20
+            exit 1
+          fi
+          if [ ! -f "cmd/abp-gen/main.go" ]; then
+            echo "❌ Error: cmd/abp-gen/main.go not found!"
             exit 1
           fi
           echo "✓ cmd/abp-gen directory found"
+          echo "✓ cmd/abp-gen/main.go found"
       
       - name: Verify build
-        run: go build -v ./cmd/abp-gen
+        env:
+          CGO_ENABLED: 0
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            go build -v -o abp-gen.exe ./cmd/abp-gen
+            if [ ! -f "abp-gen.exe" ]; then
+              echo "❌ Error: Binary abp-gen.exe was not created!"
+              exit 1
+            fi
+            echo "✓ Binary abp-gen.exe built successfully"
+          else
+            go build -v -o abp-gen ./cmd/abp-gen
+            if [ ! -f "abp-gen" ]; then
+              echo "❌ Error: Binary abp-gen was not created!"
+              exit 1
+            fi
+            echo "✓ Binary abp-gen built successfully"
+          fi
       
       - name: Test binary
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
+            if [ ! -f "abp-gen.exe" ]; then
+              echo "❌ Error: abp-gen.exe not found!"
+              exit 1
+            fi
             ./abp-gen.exe --version || exit 1
             ./abp-gen.exe --help || exit 1
           else
+            if [ ! -f "abp-gen" ]; then
+              echo "❌ Error: abp-gen not found!"
+              exit 1
+            fi
             ./abp-gen --version || exit 1
             ./abp-gen --help || exit 1
           fi
@@ -137,16 +169,35 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
-          go build -ldflags="-s -w" -o abp-gen ./cmd/abp-gen
+          BINARY_NAME="abp-gen"
           if [ "${{ matrix.goos }}" == "windows" ]; then
-            mv abp-gen abp-gen.exe
+            BINARY_NAME="abp-gen.exe"
           fi
+          
+          echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }}..."
+          go build -ldflags="-s -w" -o "$BINARY_NAME" ./cmd/abp-gen
+          
+          if [ ! -f "$BINARY_NAME" ]; then
+            echo "❌ Error: Binary $BINARY_NAME was not created!"
+            exit 1
+          fi
+          
+          echo "✓ Binary $BINARY_NAME built successfully"
+          ls -lh "$BINARY_NAME"
       
       - name: Verify binary
         run: |
+          BINARY_NAME="abp-gen"
           if [ "${{ matrix.goos }}" == "windows" ]; then
-            ./abp-gen.exe --version
-          else
-            ./abp-gen --version
+            BINARY_NAME="abp-gen.exe"
           fi
+          
+          if [ ! -f "$BINARY_NAME" ]; then
+            echo "❌ Error: Binary $BINARY_NAME not found!"
+            exit 1
+          fi
+          
+          echo "Testing binary $BINARY_NAME..."
+          ./"$BINARY_NAME" --version || exit 1
+          echo "✓ Binary verification successful"
 

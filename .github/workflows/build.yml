@@ -71,7 +71,35 @@ jobs:
           else
             OUTPUT_NAME=abp-gen
           fi
+          
+          echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }}..."
           go build -ldflags="-s -w -X main.Version=${GITHUB_REF#refs/tags/} -X main.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.GitCommit=${GITHUB_SHA}" -o "$OUTPUT_NAME" ./cmd/abp-gen
+          
+          if [ ! -f "$OUTPUT_NAME" ]; then
+            echo "❌ Error: Binary $OUTPUT_NAME was not created!"
+            exit 1
+          fi
+          
+          echo "✓ Binary $OUTPUT_NAME built successfully"
+          ls -lh "$OUTPUT_NAME"
+        working-directory: ${{ github.workspace }}
+      
+      - name: Verify binary
+        run: |
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            BINARY_NAME=abp-gen.exe
+          else
+            BINARY_NAME=abp-gen
+          fi
+          
+          if [ ! -f "$BINARY_NAME" ]; then
+            echo "❌ Error: Binary $BINARY_NAME not found!"
+            exit 1
+          fi
+          
+          echo "Verifying binary $BINARY_NAME..."
+          ./"$BINARY_NAME" --version || exit 1
+          echo "✓ Binary verification successful"
         working-directory: ${{ github.workspace }}
       
       - name: Upload artifact
@@ -82,4 +110,5 @@ jobs:
             abp-gen
             abp-gen.exe
           retention-days: 7
+        working-directory: ${{ github.workspace }}
 
