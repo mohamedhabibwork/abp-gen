@@ -32,9 +32,11 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Download dependencies
+        shell: bash
         run: go mod download
       
       - name: Run tests
+        shell: bash
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
         working-directory: ${{ github.workspace }}
       
@@ -47,9 +49,11 @@ jobs:
           name: codecov-umbrella
       
       - name: Run go vet
+        shell: bash
         run: go vet ./...
       
       - name: Verify project structure
+        shell: bash
         run: |
           if [ ! -d "cmd/abp-gen" ]; then
             echo "❌ Error: cmd/abp-gen directory not found!"
@@ -65,6 +69,7 @@ jobs:
           echo "✓ cmd/abp-gen/main.go found"
       
       - name: Verify build
+        shell: bash
         env:
           CGO_ENABLED: 0
         run: |
@@ -85,6 +90,7 @@ jobs:
           fi
       
       - name: Test binary
+        shell: bash
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
             if [ ! -f "abp-gen.exe" ]; then
@@ -154,6 +160,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Verify project structure
+        shell: bash
         run: |
           if [ ! -d "cmd/abp-gen" ]; then
             echo "❌ Error: cmd/abp-gen directory not found!"
@@ -164,6 +171,7 @@ jobs:
           echo "✓ cmd/abp-gen directory found"
       
       - name: Build binary
+        shell: bash
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -186,6 +194,7 @@ jobs:
           ls -lh "$BINARY_NAME"
       
       - name: Verify binary
+        shell: bash
         # Only run binary tests when building for the same architecture as the runner
         if: |
           (matrix.goos == 'linux' && matrix.goarch == 'amd64' && matrix.os == 'ubuntu-latest') ||
@@ -208,6 +217,7 @@ jobs:
           echo "✓ Binary verification successful"
       
       - name: Verify binary (cross-compiled)
+        shell: bash
         # For cross-compiled binaries, just verify they exist and have correct size
         if: |
           !((matrix.goos == 'linux' && matrix.goarch == 'amd64' && matrix.os == 'ubuntu-latest') ||
