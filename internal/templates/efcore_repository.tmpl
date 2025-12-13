@@ -1,12 +1,12 @@
-using {{.NamespaceRoot}}.Domain.Entities;
-using {{.NamespaceRoot}}.Domain.Repositories;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}};
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
-namespace {{.NamespaceRoot}}.EntityFrameworkCore.Repositories;
+namespace {{.NamespaceRoot}}.EntityFrameworkCore.Repositories.{{.ModuleName}};
 
 public class EfCore{{.EntityName}}Repository : EfCoreRepository<{{.ModuleName}}DbContext, {{.EntityName}}, {{.PrimaryKeyType}}>, I{{.EntityName}}Repository
 {

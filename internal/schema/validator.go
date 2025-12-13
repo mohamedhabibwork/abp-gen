@@ -43,7 +43,14 @@ func (s *Schema) validateSolution() error {
 	}
 
 	if s.Solution.NamespaceRoot == "" {
-		s.Solution.NamespaceRoot = fmt.Sprintf("%s.%s", s.Solution.Name, s.Solution.ModuleName)
+		s.Solution.NamespaceRoot = s.Solution.Name
+	} else {
+		// Normalize: if NamespaceRoot contains the module name, strip it
+		// e.g., "EdeServices.User" -> "EdeServices"
+		expectedWithModule := s.Solution.Name + "." + s.Solution.ModuleName
+		if s.Solution.NamespaceRoot == expectedWithModule {
+			s.Solution.NamespaceRoot = s.Solution.Name
+		}
 	}
 
 	if s.Solution.ABPVersion == "" {

@@ -167,12 +167,24 @@ func (w *Writer) UpdateFile(path string, modifyFunc func(string) (string, error)
 }
 
 // UpdateFileIdempotent updates a file only if the specified content doesn't already exist
-func (w *Writer) UpdateFileIdempotent(path string, searchPattern string, insertFunc func(string) (string, error)) error {
+// If the file doesn't exist, it will call createFunc to generate initial content
+func (w *Writer) UpdateFileIdempotent(path string, searchPattern string, insertFunc func(string) (string, error), createFunc func() (string, error)) error {
 	// Read existing content
 	content, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("file does not exist: %s", path)
+			// File doesn't exist, create it with initial content
+			if createFunc == nil {
+				return fmt.Errorf("file does not exist: %s", path)
+			}
+
+			initialContent, err := createFunc()
+			if err != nil {
+				return fmt.Errorf("failed to create initial content for %s: %w", path, err)
+			}
+
+			// Write the initial file
+			return w.WriteFile(path, initialContent)
 		}
 		return err
 	}

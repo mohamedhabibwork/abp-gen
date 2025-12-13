@@ -181,6 +181,18 @@ func runGenerate() error {
 
 	fmt.Printf("✓ Found solution: %s\n", solutionInfo.Name)
 
+	// Show detected projects in verbose mode
+	if verbose {
+		fmt.Printf("\nDetected projects:\n")
+		for _, project := range solutionInfo.Projects {
+			projectType := string(project.Type)
+			if projectType == "Unknown" {
+				projectType = "Unknown (not recognized as ABP layer)"
+			}
+			fmt.Printf("  - %s (%s)\n", project.Name, projectType)
+		}
+	}
+
 	// Detect layer paths
 	module := sch.Solution.ModuleName
 	if moduleName != "" {

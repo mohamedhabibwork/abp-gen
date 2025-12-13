@@ -1,10 +1,10 @@
-using {{.NamespaceRoot}}.Domain.Entities;
-using {{.NamespaceRoot}}.Domain.Repositories;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}};
 using System;
 using Volo.Abp.Domain.Repositories.MongoDB;
 using Volo.Abp.MongoDB;
 
-namespace {{.NamespaceRoot}}.MongoDB.Repositories;
+namespace {{.NamespaceRoot}}.MongoDB.Repositories.{{.ModuleName}};
 
 public class Mongo{{.EntityName}}Repository : MongoDbRepository<{{.ModuleName}}MongoDbContext, {{.EntityName}}, {{.PrimaryKeyType}}>, I{{.EntityName}}Repository
 {

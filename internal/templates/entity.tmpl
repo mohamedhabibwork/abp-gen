@@ -2,15 +2,15 @@ using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using System.ComponentModel.DataAnnotations;
 {{- if .HasEvents}}
-using {{.NamespaceRoot}}.Events;
+using {{.NamespaceRoot}}.Events.{{.ModuleName}};
 {{- end}}
-using {{.NamespaceRoot}}.Constants;
+using {{.NamespaceRoot}}.Constants.{{.ModuleName}};
 using Volo.Abp.Domain.Values;
 using System.Collections.Generic;
 using Volo.Abp.Domain.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace {{.NamespaceRoot}}.Domain.Entities
+namespace {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}
 {
     public class {{.EntityName}} : {{.EntityType}}<{{.PrimaryKeyType}}>
     {
@@ -38,7 +38,7 @@ namespace {{.NamespaceRoot}}.Domain.Entities
         
         protected {{.EntityName}}() { }
 
-        public {{.EntityName}}({{.PrimaryKeyType}} id{{range .NonForeignKeyProperties}}, {{.Type}} {{. Name | lowerFirst}}{{end}}){{if ne .EntityType "ValueObject"}} : base(id){{end}}
+        public {{.EntityName}}({{.PrimaryKeyType}} id{{range .NonForeignKeyProperties}}, {{.Type}} {{.Name | lowerFirst}}{{end}}){{if ne .EntityType "ValueObject"}} : base(id){{end}}
         {
 {{- range .NonForeignKeyProperties}}
             Set{{.Name}}({{.Name | lowerFirst}});

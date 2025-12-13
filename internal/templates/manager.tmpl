@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
-using {{.NamespaceRoot}}.Domain.Entities;
-using {{.NamespaceRoot}}.Domain.Repositories;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}};
 using Volo.Abp;
 
-namespace {{.NamespaceRoot}}.Domain.Managers
+namespace {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}}
 {
     public class {{.EntityName}}Manager : DomainService
     {

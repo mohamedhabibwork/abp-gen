@@ -107,17 +107,37 @@ func ParseSolution(solutionPath string) (*SolutionInfo, error) {
 }
 
 // parseProjectLine parses a project line from the solution file
+// Format: Project("{GUID}") = "ProjectName", "path\Project.csproj", "{GUID}"
 func parseProjectLine(line string, solutionDir string) *ProjectInfo {
 	// Extract project name and path
 	parts := strings.Split(line, "\"")
-	if len(parts) < 5 {
+	// We need at least 8 parts: Project({, GUID, ) = , ProjectName, , path, , GUID, )
+	if len(parts) < 8 {
 		return nil
 	}
 
-	projectName := parts[1]
-	projectPath := parts[3]
+	// Skip solution folders and other non-project entries
+	// Solution folders have GUID {2150E333-8FDC-42A3-9474-1A3956D46DE8}
+	// C# projects have GUID {9A19103F-16F7-4668-BE54-9A1E7A4F7556}
+	projectTypeGUID := parts[1]
+
+	// Skip solution folders
+	if projectTypeGUID == "2150E333-8FDC-42A3-9474-1A3956D46DE8" {
+		return nil
+	}
+
+	// Extract project name (parts[3]) and path (parts[5])
+	projectName := parts[3]
+	projectPath := parts[5]
+
+	// Skip if path doesn't end with .csproj (not a C# project)
+	if !strings.HasSuffix(projectPath, ".csproj") {
+		return nil
+	}
 
 	// Convert relative path to absolute
+	// Handle both Windows (\\) and Unix (/) path separators
+	projectPath = strings.ReplaceAll(projectPath, "\\", string(filepath.Separator))
 	absPath := filepath.Join(solutionDir, projectPath)
 	projectDir := filepath.Dir(absPath)
 
@@ -133,25 +153,64 @@ func parseProjectLine(line string, solutionDir string) *ProjectInfo {
 }
 
 // DetermineProjectType determines the ABP layer type from project name
+// It checks both suffix patterns (e.g., "Module.Domain") and exact/contains patterns (e.g., "Domain")
 func DetermineProjectType(projectName string) ProjectType {
-	switch {
-	case strings.HasSuffix(projectName, ".Domain.Shared"):
+	// Normalize project name for comparison
+	nameLower := strings.ToLower(projectName)
+
+	// Check for Domain.Shared first (more specific)
+	if strings.HasSuffix(projectName, ".Domain.Shared") ||
+		strings.Contains(nameLower, ".domain.shared") ||
+		nameLower == "domain.shared" {
 		return ProjectTypeDomainShared
-	case strings.HasSuffix(projectName, ".Domain"):
-		return ProjectTypeDomain
-	case strings.HasSuffix(projectName, ".Application.Contracts"):
-		return ProjectTypeApplicationContracts
-	case strings.HasSuffix(projectName, ".Application"):
-		return ProjectTypeApplication
-	case strings.HasSuffix(projectName, ".HttpApi"):
-		return ProjectTypeHttpApi
-	case strings.HasSuffix(projectName, ".EntityFrameworkCore"):
-		return ProjectTypeEntityFrameworkCore
-	case strings.HasSuffix(projectName, ".MongoDB"):
-		return ProjectTypeMongoDB
-	default:
-		return ProjectTypeUnknown
 	}
+
+	// Check for Application.Contracts (more specific than Application)
+	if strings.HasSuffix(projectName, ".Application.Contracts") ||
+		strings.Contains(nameLower, ".application.contracts") ||
+		nameLower == "application.contracts" {
+		return ProjectTypeApplicationContracts
+	}
+
+	// Check for EntityFrameworkCore
+	if strings.HasSuffix(projectName, ".EntityFrameworkCore") ||
+		strings.Contains(nameLower, ".entityframeworkcore") ||
+		nameLower == "entityframeworkcore" ||
+		strings.Contains(nameLower, ".efcore") ||
+		nameLower == "efcore" {
+		return ProjectTypeEntityFrameworkCore
+	}
+
+	// Check for MongoDB
+	if strings.HasSuffix(projectName, ".MongoDB") ||
+		strings.Contains(nameLower, ".mongodb") ||
+		nameLower == "mongodb" {
+		return ProjectTypeMongoDB
+	}
+
+	// Check for Domain (after Domain.Shared to avoid false positives)
+	if strings.HasSuffix(projectName, ".Domain") ||
+		strings.Contains(nameLower, ".domain") ||
+		nameLower == "domain" {
+		return ProjectTypeDomain
+	}
+
+	// Check for Application (after Application.Contracts to avoid false positives)
+	if strings.HasSuffix(projectName, ".Application") ||
+		strings.Contains(nameLower, ".application") ||
+		nameLower == "application" {
+		return ProjectTypeApplication
+	}
+
+	// Check for HttpApi (be careful not to match Application)
+	if strings.HasSuffix(projectName, ".HttpApi") ||
+		strings.Contains(nameLower, ".httpapi") ||
+		nameLower == "httpapi" ||
+		(strings.HasSuffix(nameLower, ".api") && !strings.Contains(nameLower, "application")) {
+		return ProjectTypeHttpApi
+	}
+
+	return ProjectTypeUnknown
 }
 
 // GetProject returns the project of a specific type

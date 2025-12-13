@@ -65,6 +65,37 @@ func (g *PermissionsGenerator) updatePermissionsFile(sch *schema.Schema, entity 
 
 	newPermissions := buf.String()
 
+	// Create initial file content if file doesn't exist
+	createInitialContent := func() (string, error) {
+		namespaceRoot := sch.Solution.NamespaceRoot
+		moduleName := sch.Solution.ModuleName
+
+		// Build initial permissions file structure
+		content := fmt.Sprintf(`using Volo.Abp.Authorization.Permissions;
+
+namespace %s.Application.Contracts.Permissions.%s
+{
+    public static class %sPermissions
+    {
+        public const string GroupName = "%s";
+
+%s
+        public static string[] GetAll()
+        {
+            return new[]
+            {
+                %sManagement.Default,
+                %sManagement.Create,
+                %sManagement.Update,
+                %sManagement.Delete
+            };
+        }
+    }
+}
+`, namespaceRoot, moduleName, moduleName, moduleName, newPermissions, entity.Name, entity.Name, entity.Name, entity.Name)
+		return content, nil
+	}
+
 	// Update file idempotently
 	return g.writer.UpdateFileIdempotent(permissionsPath, searchPattern, func(content string) (string, error) {
 		// Find GetAll() method and insert before it
@@ -75,7 +106,7 @@ func (g *PermissionsGenerator) updatePermissionsFile(sch *schema.Schema, entity 
 
 		updated := getAllPattern.ReplaceAllString(content, newPermissions+"$1$2")
 		return updated, nil
-	})
+	}, createInitialContent)
 }
 
 // updatePermissionProvider updates the permission definition provider
@@ -92,9 +123,11 @@ func (g *PermissionsGenerator) updatePermissionProvider(sch *schema.Schema, enti
 	}
 
 	entityNameLower := strings.ToLower(entity.Name[:1]) + entity.Name[1:]
+	moduleNameLower := strings.ToLower(sch.Solution.ModuleName[:1]) + sch.Solution.ModuleName[1:]
 
 	data := map[string]interface{}{
 		"ModuleName":      sch.Solution.ModuleName,
+		"ModuleNameLower": moduleNameLower,
 		"EntityName":      entity.Name,
 		"EntityNameLower": entityNameLower,
 	}
@@ -105,6 +138,34 @@ func (g *PermissionsGenerator) updatePermissionProvider(sch *schema.Schema, enti
 	}
 
 	newDefinitions := buf.String()
+
+	// Create initial file content if file doesn't exist
+	createInitialContent := func() (string, error) {
+		namespaceRoot := sch.Solution.NamespaceRoot
+		moduleName := sch.Solution.ModuleName
+
+		moduleNameLower := strings.ToLower(moduleName[:1]) + moduleName[1:]
+
+		// Build initial permission provider file structure
+		content := fmt.Sprintf(`using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Localization;
+using %s.Localization.%s;
+
+namespace %s.Application.Contracts.Permissions.%s
+{
+    public class %sPermissionDefinitionProvider : PermissionDefinitionProvider
+    {
+        public override void Define(IPermissionDefinitionContext context)
+        {
+            var %sGroup = context.GetGroupOrNull(%sPermissions.GroupName)
+                ?? context.AddGroup(%sPermissions.GroupName, L("Permission:%s"));
+
+%s        }
+    }
+}
+`, namespaceRoot, moduleName, namespaceRoot, moduleName, moduleName, moduleNameLower, moduleName, moduleName, moduleName, newDefinitions)
+		return content, nil
+	}
 
 	// Update file idempotently
 	return g.writer.UpdateFileIdempotent(providerPath, searchPattern, func(content string) (string, error) {
@@ -117,7 +178,7 @@ func (g *PermissionsGenerator) updatePermissionProvider(sch *schema.Schema, enti
 
 		updated := pattern.ReplaceAllString(content, newDefinitions+"$1$2")
 		return updated, nil
-	})
+	}, createInitialContent)
 }
 
 // GenerateLocalization generates or updates localization files

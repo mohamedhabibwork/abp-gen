@@ -79,7 +79,7 @@ func PromptSolutionConfig() (*schema.Solution, error) {
 		return nil, err
 	}
 
-	defaultNamespace := fmt.Sprintf("%s.%s", name, moduleName)
+	defaultNamespace := name
 	namespaceRoot, err := PromptText("Namespace root:", defaultNamespace)
 	if err != nil {
 		return nil, err

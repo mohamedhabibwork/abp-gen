@@ -1,9 +1,11 @@
 package detector
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // LayerPaths contains the paths to various ABP layers
@@ -92,7 +94,32 @@ func DetectLayerPaths(solutionInfo *SolutionInfo, moduleName string) (*LayerPath
 
 	// Validate required paths exist
 	if paths.Domain == "" {
-		return nil, fmt.Errorf("Domain project not found in solution")
+		// Build a helpful error message listing detected projects
+		var detectedProjects []string
+		var unknownProjects []string
+		for _, project := range solutionInfo.Projects {
+			if project.Type != ProjectTypeUnknown {
+				detectedProjects = append(detectedProjects, fmt.Sprintf("%s (%s)", project.Name, project.Type))
+			} else {
+				unknownProjects = append(unknownProjects, project.Name)
+			}
+		}
+
+		errMsg := "Domain project not found in solution"
+		if len(detectedProjects) > 0 {
+			errMsg += fmt.Sprintf("\nDetected projects: %s", strings.Join(detectedProjects, ", "))
+		}
+		if len(unknownProjects) > 0 {
+			errMsg += fmt.Sprintf("\nUnknown projects (not recognized as ABP layers): %s", strings.Join(unknownProjects, ", "))
+		}
+		errMsg += "\n\nExpected project naming patterns:"
+		errMsg += "\n  - Domain: '*.Domain' or 'Domain'"
+		errMsg += "\n  - Domain.Shared: '*.Domain.Shared' or 'Domain.Shared'"
+		errMsg += "\n  - Application: '*.Application' or 'Application'"
+		errMsg += "\n  - Application.Contracts: '*.Application.Contracts' or 'Application.Contracts'"
+		errMsg += "\n  - HttpApi: '*.HttpApi' or 'HttpApi'"
+
+		return nil, errors.New(errMsg)
 	}
 
 	return paths, nil

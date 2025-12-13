@@ -1,15 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
-using {{.NamespaceRoot}}.Application.Contracts.Services;
+using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleName}};
 using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
 using System;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
 using System.Threading.Tasks;
+using Volo.Abp.EventBus.Distributed;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.AspNetCore.Authorization;
-using static {{.NamespaceRoot}}.Permissions.{{.ModuleName}}Permissions;
+using static {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}}.{{.ModuleName}}Permissions;
 using Volo.Abp;
 
-namespace {{.NamespaceRoot}}.HttpApi.Controllers
+namespace {{.NamespaceRoot}}.HttpApi.Controllers.{{.ModuleName}}
 {
     [Route("api/{{.EntityNamePlural | toLower}}")]
     public class {{.EntityName}}Controller : AbpControllerBase

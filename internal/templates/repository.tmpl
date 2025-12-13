@@ -1,8 +1,8 @@
 using System;
 using Volo.Abp.Domain.Repositories;
-using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
 
-namespace {{.NamespaceRoot}}.Domain.Repositories
+namespace {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}
 {
     public interface I{{.EntityName}}Repository : IRepository<{{.EntityName}}, {{.PrimaryKeyType}}>
     {

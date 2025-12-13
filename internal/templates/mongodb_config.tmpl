@@ -1,8 +1,8 @@
 using MongoDB.Driver;
 using Volo.Abp.MongoDB;
-using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
 
-namespace {{.NamespaceRoot}}.MongoDB;
+namespace {{.NamespaceRoot}}.MongoDB.{{.ModuleName}};
 
 public static class {{.EntityName}}MongoDbConfiguration
 {

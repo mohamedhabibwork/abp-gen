@@ -1,26 +1,27 @@
 using System;
 using Volo.Abp.Application.Services;
-using {{.NamespaceRoot}}.Application.Contracts.Services;
-using {{.NamespaceRoot}}.Domain.Entities;
-using {{.NamespaceRoot}}.Domain.Managers;
+using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleName}};
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
+using {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}};
 using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
 using Volo.Abp.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using {{.NamespaceRoot}}.Permissions;
-using {{.NamespaceRoot}}.Constants;
+using {{.NamespaceRoot}}.Constants.{{.ModuleName}};
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Caching;
 using Volo.Abp.EventBus.Distributed;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
-using static {{.NamespaceRoot}}.Permissions.{{.ModuleName}}Permissions;
+using static {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}}.{{.ModuleName}}Permissions;
 {{- if .HasEvents}}
-using {{.NamespaceRoot}}.Events;
+using {{.NamespaceRoot}}.Events.{{.ModuleName}};
 {{- end}}
 using Volo.Abp;
 
-namespace {{.NamespaceRoot}}.Application.Services
+namespace {{.NamespaceRoot}}.Application.Services.{{.ModuleName}}
 {
     [RemoteService(false)]
     [Authorize({{.EntityName}}Management.Default)]
@@ -126,8 +127,13 @@ namespace {{.NamespaceRoot}}.Application.Services
 
             // Use manager for business logic
             var entity = await _manager.CreateAsync(
+{{- if eq .PrimaryKeyType "Guid"}}
                 GuidGenerator.Create(){{range .NonForeignKeyProperties}},
                 input.{{.Name}}{{end}}
+{{- else}}
+                0{{range .NonForeignKeyProperties}},
+                input.{{.Name}}{{end}}
+{{- end}}
             );
 
             await Repository.InsertAsync(entity, autoSave: true);

@@ -47,6 +47,11 @@ func (g *EFCoreGenerator) Generate(sch *schema.Schema, entity *schema.Entity, pa
 		return err
 	}
 
+	// Update OnModelCreating in DbContext
+	if err := g.UpdateModelCreating(sch, entity, paths); err != nil {
+		return err
+	}
+
 	// Update IDbContext
 	return g.UpdateIDbContext(sch, entity, paths)
 }
@@ -115,6 +120,45 @@ func (g *EFCoreGenerator) UpdateDbContext(sch *schema.Schema, entity *schema.Ent
 	entityPlural := templates.Pluralize(entity.Name)
 	dbSetProperty := fmt.Sprintf("\n    public virtual DbSet<%s> %s { get; set; }\n", entity.Name, entityPlural)
 
+	// Create initial DbContext file if it doesn't exist
+	createInitialContent := func() (string, error) {
+		namespaceRoot := sch.Solution.NamespaceRoot
+		moduleName := sch.Solution.ModuleName
+		
+		// Build initial DbContext file structure
+		content := fmt.Sprintf(`using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Data;
+using Volo.Abp.EntityFrameworkCore;
+using %s.EntityFrameworkCore.Configurations.%s;
+
+namespace %s.EntityFrameworkCore
+{
+    [ConnectionStringName("%s")]
+    public class %sDbContext : AbpDbContext<%sDbContext>
+    {
+        /* Add DbSet properties here. Example:
+         * public DbSet<Question> Questions { get; set; }
+         */
+%s
+        public %sDbContext(DbContextOptions<%sDbContext> options)
+            : base(options)
+        {
+        }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            /* Configure your own tables/entities inside here */
+
+            builder.ApplyConfiguration(new %sConfiguration());
+        }
+    }
+}
+`, namespaceRoot, moduleName, namespaceRoot, moduleName, moduleName, moduleName, dbSetProperty, moduleName, moduleName, entity.Name)
+		return content, nil
+	}
+
 	return g.writer.UpdateFileIdempotent(dbContextPath, searchPattern, func(content string) (string, error) {
 		// Find the DbContext constructor and insert DbSet before it
 		pattern := regexp.MustCompile(`(\s+)(public\s+\w+DbContext\()`)
@@ -124,7 +168,7 @@ func (g *EFCoreGenerator) UpdateDbContext(sch *schema.Schema, entity *schema.Ent
 
 		updated := pattern.ReplaceAllString(content, dbSetProperty+"$1$2")
 		return updated, nil
-	})
+	}, createInitialContent)
 }
 
 // UpdateIDbContext updates the IDbContext interface to add DbSet
@@ -137,6 +181,27 @@ func (g *EFCoreGenerator) UpdateIDbContext(sch *schema.Schema, entity *schema.En
 	entityPlural := templates.Pluralize(entity.Name)
 	dbSetProperty := fmt.Sprintf("\n    DbSet<%s> %s { get; }\n", entity.Name, entityPlural)
 
+	// Create initial IDbContext file if it doesn't exist
+	createInitialContent := func() (string, error) {
+		namespaceRoot := sch.Solution.NamespaceRoot
+		moduleName := sch.Solution.ModuleName
+		
+		// Build initial IDbContext file structure
+		content := fmt.Sprintf(`using Microsoft.EntityFrameworkCore;
+
+namespace %s.EntityFrameworkCore
+{
+    public interface I%sDbContext : IEfCoreDbContext
+    {
+        /* Add DbSet properties here. Example:
+         * DbSet<Question> Questions { get; }
+         */
+%s    }
+}
+`, namespaceRoot, moduleName, dbSetProperty)
+		return content, nil
+	}
+
 	return g.writer.UpdateFileIdempotent(idbContextPath, searchPattern, func(content string) (string, error) {
 		// Find the closing brace of the interface and insert before it
 		pattern := regexp.MustCompile(`(\s+)(}\s*$)`)
@@ -146,7 +211,7 @@ func (g *EFCoreGenerator) UpdateIDbContext(sch *schema.Schema, entity *schema.En
 
 		updated := pattern.ReplaceAllString(content, dbSetProperty+"$1$2")
 		return updated, nil
-	})
+	}, createInitialContent)
 }
 
 // UpdateModelCreating adds entity configuration to OnModelCreating
@@ -166,5 +231,5 @@ func (g *EFCoreGenerator) UpdateModelCreating(sch *schema.Schema, entity *schema
 
 		updated := pattern.ReplaceAllString(content, "$1"+configLine)
 		return updated, nil
-	})
+	}, nil)
 }
