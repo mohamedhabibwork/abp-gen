@@ -1,6 +1,11 @@
-# ABP Code Generator (abp-gen)
+# abp-gen
 
-A cross-platform CLI tool written in Go that generates production-ready ABP Framework (.NET) C# code from JSON schemas or through interactive prompts.
+[![CI](https://github.com/mohamedhabibwork/abp-gen/workflows/CI/badge.svg)](https://github.com/mohamedhabibwork/abp-gen/actions)
+[![Release](https://github.com/mohamedhabibwork/abp-gen/workflows/Release/badge.svg)](https://github.com/mohamedhabibwork/abp-gen/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?logo=go)](https://golang.org)
+
+Cross-platform CLI tool for generating ABP Framework C# code from JSON schemas.
 
 ## Features
 
@@ -20,6 +25,26 @@ A cross-platform CLI tool written in Go that generates production-ready ABP Fram
 - ✅ **ABP v9+ Compatible**: Follows latest ABP Framework conventions
 
 ## Installation
+
+### Pre-built Binaries
+
+Download pre-built binaries from the [releases page](https://github.com/mohamedhabibwork/abp-gen/releases).
+
+**Quick Install:**
+
+```bash
+# Linux/macOS (replace VERSION with latest version, e.g., 1.0.0)
+VERSION="1.0.0"
+curl -L https://github.com/mohamedhabibwork/abp-gen/releases/download/v${VERSION}/abp-gen_${VERSION}_linux_amd64.tar.gz | tar xz
+sudo mv abp-gen /usr/local/bin/
+
+# macOS (Homebrew) - when tap is available
+# brew install mohamedhabibwork/tap/abp-gen
+
+# Windows
+# Download abp-gen_${VERSION}_windows_amd64.zip from releases
+# Extract and add to PATH
+```
 
 ### From Source
 
@@ -541,29 +566,36 @@ The generator is idempotent - it will skip existing permissions. Use `--force` t
 
 ## Contributing
 
-Contributions are welcome! Please:
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Credits
+## Acknowledgments
 
-Created by [Your Name]
-
-Inspired by ABP Framework code generation patterns and community needs.
+- [ABP Framework](https://abp.io) - The amazing framework this tool generates code for
+- [GoReleaser](https://goreleaser.com) - For cross-platform release automation
+- All contributors who help improve this project
 
 ## Support
 
 - GitHub Issues: https://github.com/mohamedhabibwork/abp-gen/issues
+- GitHub Discussions: https://github.com/mohamedhabibwork/abp-gen/discussions
 - ABP Forum: https://abp.io/support
 - Documentation: https://docs.abp.io
+
+## Security
+
+For security vulnerabilities, please see [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 

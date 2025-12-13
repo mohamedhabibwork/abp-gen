@@ -8,7 +8,8 @@ import (
 
 // BuildSchemaInteractively builds a complete schema through interactive prompts
 func BuildSchemaInteractively() (*schema.Schema, error) {
-	fmt.Println("\n=== ABP Code Generator - Interactive Mode ===\n")
+	fmt.Println("\n=== ABP Code Generator - Interactive Mode ===")
+	fmt.Println()
 
 	// Build solution configuration
 	solution, err := PromptSolutionConfig()
@@ -65,7 +66,8 @@ func BuildSchemaInteractively() (*schema.Schema, error) {
 
 // PromptSolutionConfig prompts for solution configuration
 func PromptSolutionConfig() (*schema.Solution, error) {
-	fmt.Println("=== Solution Configuration ===\n")
+	fmt.Println("=== Solution Configuration ===")
+	fmt.Println()
 
 	name, err := PromptText("Solution name:", "")
 	if err != nil {
@@ -153,7 +155,8 @@ func PromptEntities(defaultPrimaryKeyType string) ([]schema.Entity, error) {
 
 // PromptGenerationOptions prompts for generation options
 func PromptGenerationOptions() (*schema.Options, error) {
-	fmt.Println("\n=== Generation Options ===\n")
+	fmt.Println("\n=== Generation Options ===")
+	fmt.Println()
 
 	useAuditedAggregateRoot, err := PromptConfirm("Use audited aggregate root?", true)
 	if err != nil {

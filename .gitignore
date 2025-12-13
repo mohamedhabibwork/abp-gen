@@ -44,3 +44,7 @@ test-output/
 # GoReleaser artifacts
 .goreleaser.yml.bak
 
+# Script backups
+*.bak
+*.sh.bak
+

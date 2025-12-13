@@ -18,6 +18,15 @@ builds:
     goarch:
       - amd64
       - arm64
+      - arm
+      - 386
+    ignore:
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: 386
+      - goos: windows
+        goarch: arm
     ldflags:
       - -s -w
       - -X main.Version={{.Version}}
@@ -47,6 +56,7 @@ snapshot:
   name_template: "{{ incpatch .Version }}-next"
 
 changelog:
+  use: git
   sort: asc
   filters:
     exclude:
@@ -56,10 +66,29 @@ changelog:
       - '^ci:'
       - Merge pull request
       - Merge branch
+  groups:
+    - title: '🚀 Features'
+      regexp: '^feat(\(.+\))?:'
+      order: 0
+    - title: '🐛 Bug Fixes'
+      regexp: '^fix(\(.+\))?:'
+      order: 1
+    - title: '♻️ Refactoring'
+      regexp: '^refactor(\(.+\))?:'
+      order: 2
+    - title: '⚡ Performance'
+      regexp: '^perf(\(.+\))?:'
+      order: 3
+    - title: '📝 Documentation'
+      regexp: '^docs(\(.+\))?:'
+      order: 4
+    - title: '🧪 Tests'
+      regexp: '^test(\(.+\))?:'
+      order: 5
 
 release:
   github:
-    owner: habib
+    owner: mohamedhabibwork
     name: abp-gen
   draft: false
   prerelease: auto
@@ -80,7 +109,7 @@ release:
 brews:
   - name: abp-gen
     tap:
-      owner: habib
+      owner: mohamedhabibwork
       name: homebrew-tap
     folder: Formula
     homepage: https://github.com/mohamedhabibwork/abp-gen
@@ -96,9 +125,9 @@ nfpms:
     package_name: abp-gen
     homepage: https://github.com/mohamedhabibwork/abp-gen
     description: "Cross-platform CLI tool for generating ABP Framework C# code"
-    maintainer: Your Name <your.email@example.com>
+    maintainer: Mohamed Habib <mohamedhabibwork@gmail.com>
     license: MIT
-    vendor: Your Company
+    vendor: ABP Code Generator
     formats:
       - deb
       - rpm

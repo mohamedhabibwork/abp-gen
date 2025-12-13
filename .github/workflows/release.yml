@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  changelog:
+    name: Generate Changelog and Update Docs
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Get previous version
+        id: get_previous
+        run: |
+          PREVIOUS=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [ -n "$PREVIOUS" ]; then
+            PREVIOUS=${PREVIOUS#v}
+          fi
+          echo "previous=$PREVIOUS" >> $GITHUB_OUTPUT
+          echo "Previous version: $PREVIOUS"
+      
+      - name: Generate changelog
+        run: |
+          chmod +x scripts/generate-changelog.sh
+          ./scripts/generate-changelog.sh v${{ steps.get_version.outputs.version }} v${{ steps.get_previous.outputs.previous }}
+      
+      - name: Update documentation version
+        run: |
+          chmod +x scripts/update-docs-version.sh
+          ./scripts/update-docs-version.sh v${{ steps.get_version.outputs.version }}
+      
+      - name: Commit changelog and docs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md README.md examples/schema.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "docs: update changelog and version to ${{ steps.get_version.outputs.version }} [skip ci]"
+            git push
+          fi
+
+  release:
+    name: Release
+    needs: changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: go.sum
+      
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

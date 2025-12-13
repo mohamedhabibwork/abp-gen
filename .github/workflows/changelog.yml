@@ -1,0 +1,39 @@
+name: Update Changelog
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '**.go'
+      - '**.md'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches: [ main, master ]
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  check-changelog:
+    name: Check Changelog
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check if changelog needs update
+        run: |
+          # Check if PR has changes that should be in changelog
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if echo "$PR_TITLE" | grep -qE "^(feat|fix|refactor|perf|breaking)"; then
+            echo "PR contains changes that should be in changelog"
+            if ! grep -q "$PR_TITLE" CHANGELOG.md; then
+              echo "⚠️ Warning: PR title suggests this should be in CHANGELOG.md"
+              echo "Please ensure CHANGELOG.md is updated before merging"
+            fi
+          fi
