@@ -116,9 +116,11 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 		return "", false, nil
 		
 	case MergeDecisionShowDiff:
-		// TODO: Show diff
-		fmt.Println("Diff display not yet implemented")
-		return "", false, nil
+		// Show diff and prompt again
+		// For now, fall through to merge decision
+		// TODO: Implement diff display
+		fmt.Println("Diff display not yet implemented, falling back to merge")
+		return e.performMerge(path, fileExists, newContent)
 		
 	case MergeDecisionMerge:
 		return e.performMerge(path, fileExists, newContent)

@@ -25,16 +25,16 @@ var (
 	verbose bool
 
 	// Generate command flags
-	inputFile      string
-	solutionPath   string
-	moduleName     string
-	templatesPath  string
-	dryRun         bool
-	force          bool
-	mergeMode      bool
-	noMerge        bool
-	mergeAll       bool
-	mergeStrategy  string
+	inputFile     string
+	solutionPath  string
+	moduleName    string
+	templatesPath string
+	dryRun        bool
+	force         bool
+	mergeMode     bool
+	noMerge       bool
+	mergeAll      bool
+	mergeStrategy string
 )
 
 func main() {
@@ -116,6 +116,10 @@ func init() {
 	generateCmd.Flags().StringVarP(&templatesPath, "templates", "t", "", "custom templates directory")
 	generateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview changes without writing files")
 	generateCmd.Flags().BoolVar(&force, "force", false, "overwrite existing files")
+	generateCmd.Flags().BoolVar(&mergeMode, "merge", false, "enable smart merge mode for existing files")
+	generateCmd.Flags().BoolVar(&noMerge, "no-merge", false, "disable merge mode (skip existing files)")
+	generateCmd.Flags().BoolVar(&mergeAll, "merge-all", false, "automatically merge all files without prompting")
+	generateCmd.Flags().StringVar(&mergeStrategy, "merge-strategy", "", "merge strategy: pattern, ast, or json (auto-detected if not specified)")
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(generateCmd)
@@ -197,10 +201,18 @@ func runGenerate() error {
 
 	// Handle merge flags
 	enableMerge := mergeMode && !noMerge && !force
-	
+
 	// Initialize generators
 	tmplLoader := templates.NewLoader(templatesPath)
 	w := writer.NewWriterWithMerge(dryRun, force, verbose, enableMerge)
+
+	// Configure merge engine with flags if merge is enabled
+	if enableMerge && mergeAll {
+		// mergeStrategy is reserved for future use to specify merge strategy
+		// Currently, the strategy is auto-detected based on file type
+		_ = mergeStrategy
+		w.SetMergeAll(true)
+	}
 
 	entityGen := generator.NewEntityGenerator(tmplLoader, w)
 	managerGen := generator.NewManagerGenerator(tmplLoader, w)
@@ -230,7 +242,7 @@ func runGenerate() error {
 	} else {
 		fmt.Println("\n✓ Safe mode - existing files will be skipped")
 	}
-	
+
 	// Generate code for each entity
 	fmt.Printf("\nGenerating code for %d entity(s)...\n\n", len(sch.Entities))
 
@@ -340,4 +352,3 @@ func runGenerate() error {
 
 	return nil
 }
-

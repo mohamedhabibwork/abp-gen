@@ -66,11 +66,13 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
-          export OUTPUT_NAME=abp-gen
           if [ "${{ matrix.goos }}" == "windows" ]; then
-            export OUTPUT_NAME=abp-gen.exe
+            OUTPUT_NAME=abp-gen.exe
+          else
+            OUTPUT_NAME=abp-gen
           fi
-          go build -ldflags="-s -w -X main.Version=${GITHUB_REF#refs/tags/} -X main.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.GitCommit=${GITHUB_SHA}" -o $OUTPUT_NAME ./cmd/abp-gen
+          go build -ldflags="-s -w -X main.Version=${GITHUB_REF#refs/tags/} -X main.BuildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.GitCommit=${GITHUB_SHA}" -o "$OUTPUT_NAME" ./cmd/abp-gen
+        working-directory: ${{ github.workspace }}
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4

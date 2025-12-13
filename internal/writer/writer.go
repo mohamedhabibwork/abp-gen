@@ -36,6 +36,18 @@ type Writer struct {
 	mergeEngine *merger.Engine
 }
 
+// SetMergeAll configures the merge engine to merge all files without prompting
+func (w *Writer) SetMergeAll(enabled bool) {
+	if w.mergeEngine != nil {
+		if enabled {
+			// Use MergeDecisionMerge as default when merge-all is enabled
+			w.mergeEngine.SetMergeAll(merger.MergeDecisionMerge)
+		} else {
+			w.mergeEngine.ResetMergeAll()
+		}
+	}
+}
+
 // NewWriter creates a new file writer
 func NewWriter(dryRun, force, verbose bool) *Writer {
 	return &Writer{
