@@ -5,6 +5,7 @@ A cross-platform CLI tool written in Go that generates production-ready ABP Fram
 ## Features
 
 - ✅ **Full CRUD Generation**: Entities, DTOs, Services, Repositories, Controllers
+- ✅ **Smart File Merging**: Intelligent merging of existing files with conflict resolution
 - ✅ **Domain Managers**: Business logic encapsulation in domain managers
 - ✅ **FluentValidation**: Automatic DTO validation with FluentValidation
 - ✅ **Distributed Cache**: Enhanced caching with expiration and list caching
@@ -338,6 +339,67 @@ Event handlers are automatically registered by ABP Framework and can be used for
 - Sending notifications
 - Updating related entities
 - Integration with external systems
+
+### Smart File Merging
+
+The generator includes an intelligent file merging system that detects existing files and offers merge options:
+
+**Merge Modes:**
+- **Interactive (default)**: Prompts for each existing file
+- **Auto-merge**: Automatically merges all files without prompting (`--merge-all`)
+- **Force**: Overwrites all files without merging (`--force`)
+- **No-merge**: Skips all existing files (`--no-merge`)
+
+**Merge Strategies:**
+
+1. **Pattern-Based** (for simple files):
+   - Permission files
+   - DbContext files
+   - Permission providers
+   - Localization JSON
+
+2. **AST-Based** (for complex C# files):
+   - Entities (merge properties and methods)
+   - DTOs (merge properties)
+   - Services (merge methods)
+   - Managers (merge methods)
+   - Controllers (merge actions)
+   - Validators (merge rules)
+
+3. **JSON Merging**:
+   - Localization files
+   - Configuration files
+   - Preserves existing keys and adds new ones
+
+**Conflict Resolution:**
+
+When conflicts are detected, you can:
+- Keep existing code
+- Use new code
+- Keep both (renames new code)
+- Skip the conflict
+- Apply resolution to all similar conflicts
+
+**Example Workflow:**
+
+```bash
+# First generation
+abp-gen generate --input schema.json
+
+# Modify schema (add new property)
+# Run again with smart merge
+abp-gen generate --input schema.json --merge
+
+# Output:
+# File exists: Domain/Entities/Product.cs (Entity). What would you like to do?
+#   [x] Merge intelligently (recommended)
+#   [ ] Overwrite with new content
+#   [ ] Skip this file
+#   [ ] Show diff first
+#
+# ✓ Merged Domain/Entities/Product.cs
+# Added property: Stock
+```
 
 ## Template Customization
 

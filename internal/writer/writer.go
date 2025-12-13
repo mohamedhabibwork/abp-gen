@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mohamedhabibwork/abp-gen/internal/merger"
 )
 
 // FileOperation represents a file operation to be performed
@@ -26,19 +28,35 @@ const (
 
 // Writer handles file writing with support for dry-run and force modes
 type Writer struct {
-	DryRun     bool
-	Force      bool
-	Verbose    bool
-	Operations []FileOperation
+	DryRun      bool
+	Force       bool
+	Verbose     bool
+	MergeMode   bool
+	Operations  []FileOperation
+	mergeEngine *merger.Engine
 }
 
 // NewWriter creates a new file writer
 func NewWriter(dryRun, force, verbose bool) *Writer {
 	return &Writer{
-		DryRun:     dryRun,
-		Force:      force,
-		Verbose:    verbose,
-		Operations: []FileOperation{},
+		DryRun:      dryRun,
+		Force:       force,
+		Verbose:     verbose,
+		MergeMode:   false,
+		Operations:  []FileOperation{},
+		mergeEngine: merger.NewEngine(force, verbose),
+	}
+}
+
+// NewWriterWithMerge creates a new file writer with merge support
+func NewWriterWithMerge(dryRun, force, verbose, mergeMode bool) *Writer {
+	return &Writer{
+		DryRun:      dryRun,
+		Force:       force,
+		Verbose:     verbose,
+		MergeMode:   mergeMode,
+		Operations:  []FileOperation{},
+		mergeEngine: merger.NewEngine(force, verbose),
 	}
 }
 
@@ -50,10 +68,33 @@ func (w *Writer) WriteFile(path string, content string) error {
 	// Check if file exists
 	exists := fileExists(path)
 
+	// If merge mode is enabled and file exists, try to merge
+	if w.MergeMode && exists && !w.Force {
+		mergedContent, shouldWrite, err := w.mergeEngine.MergeFile(path, content)
+		if err != nil {
+			return fmt.Errorf("merge failed for %s: %w", path, err)
+		}
+		
+		if !shouldWrite {
+			// User chose to skip
+			w.Operations = append(w.Operations, FileOperation{
+				Type:     OperationSkip,
+				Path:     path,
+				Content:  content,
+				Existing: true,
+			})
+			w.logOperation(OperationSkip, path)
+			return nil
+		}
+		
+		// Use merged content
+		content = mergedContent
+	}
+
 	// Determine operation type
 	opType := OperationCreate
 	if exists {
-		if w.Force {
+		if w.Force || w.MergeMode {
 			opType = OperationUpdate
 		} else {
 			opType = OperationSkip
