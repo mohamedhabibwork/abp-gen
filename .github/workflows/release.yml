@@ -20,10 +20,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Get version from tag
         id: get_version
+        shell: bash
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
@@ -31,6 +31,7 @@ jobs:
       
       - name: Get previous version
         id: get_previous
+        shell: bash
         run: |
           PREVIOUS=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
           if [ -n "$PREVIOUS" ]; then
@@ -40,16 +41,21 @@ jobs:
           echo "Previous version: $PREVIOUS"
       
       - name: Generate changelog
+        shell: bash
         run: |
           chmod +x scripts/generate-changelog.sh
           ./scripts/generate-changelog.sh v${{ steps.get_version.outputs.version }} v${{ steps.get_previous.outputs.previous }}
       
       - name: Update documentation version
+        shell: bash
         run: |
           chmod +x scripts/update-docs-version.sh
           ./scripts/update-docs-version.sh v${{ steps.get_version.outputs.version }}
       
       - name: Commit changelog and docs
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -58,6 +64,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "docs: update changelog and version to ${{ steps.get_version.outputs.version }} [skip ci]"
+            git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
             git push
           fi
 
