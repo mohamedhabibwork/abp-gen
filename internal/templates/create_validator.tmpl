@@ -1,0 +1,46 @@
+using FluentValidation;
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
+using {{.NamespaceRoot}}.Constants;
+using Volo.Abp.Validation;
+
+namespace {{.NamespaceRoot}}.Application.Validators
+{
+    public class Create{{.EntityName}}DtoValidator : AbstractValidator<Create{{.EntityName}}Dto>
+    {
+        public Create{{.EntityName}}DtoValidator()
+        {
+{{- range .NonForeignKeyProperties}}
+    {{- if .IsRequired}}
+            RuleFor(x => x.{{.Name}})
+                .NotEmpty()
+                .WithMessage("{{.Name}} is required");
+    {{- end}}
+    {{- if eq .Type "string"}}
+        {{- if .MaxLength}}
+            RuleFor(x => x.{{.Name}})
+                .MaximumLength({{$.EntityName}}Constants.ValidationConstants.{{.Name}}MaxLength)
+                .WithMessage("{{.Name}} must not exceed {MaxLength} characters");
+        {{- end}}
+        {{- if .IsRequired}}
+            RuleFor(x => x.{{.Name}})
+                .NotNull()
+                .WithMessage("{{.Name}} is required");
+        {{- end}}
+    {{- else if eq .Type "decimal"}}
+        {{- if .IsRequired}}
+            RuleFor(x => x.{{.Name}})
+                .GreaterThan(0)
+                .WithMessage("{{.Name}} must be greater than 0");
+        {{- end}}
+    {{- else if eq .Type "int"}}
+        {{- if .IsRequired}}
+            RuleFor(x => x.{{.Name}})
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("{{.Name}} must be greater than or equal to 0");
+        {{- end}}
+    {{- end}}
+{{- end}}
+        }
+    }
+}
+

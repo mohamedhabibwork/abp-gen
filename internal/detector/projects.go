@@ -1,0 +1,175 @@
+package detector
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+// LayerPaths contains the paths to various ABP layers
+type LayerPaths struct {
+	Domain              string
+	DomainShared        string
+	ApplicationContracts string
+	Application         string
+	HttpApi             string
+	EntityFrameworkCore string
+	MongoDB             string
+
+	// Subdirectories within layers
+	DomainEntities      string
+	DomainRepositories  string
+	DomainManagers      string
+	DomainData          string
+	DomainSharedConstants    string
+	DomainSharedEvents       string
+	DomainSharedEnums        string
+	DomainSharedLocalization string
+	ContractsPermissions     string
+	ContractsDTOs            string
+	ContractsServices        string
+	ApplicationServices      string
+	ApplicationAutoMapper    string
+	ApplicationValidators    string
+	ApplicationEventHandlers string
+	HttpApiControllers       string
+	EFCoreConfigurations     string
+	EFCoreRepositories       string
+	MongoDBRepositories      string
+}
+
+// DetectLayerPaths detects and returns paths to all ABP layers
+func DetectLayerPaths(solutionInfo *SolutionInfo, moduleName string) (*LayerPaths, error) {
+	paths := &LayerPaths{}
+
+	// Get base project paths
+	if domain := solutionInfo.GetProject(ProjectTypeDomain); domain != nil {
+		paths.Domain = domain.Directory
+		paths.DomainEntities = filepath.Join(domain.Directory, "Entities")
+		paths.DomainRepositories = filepath.Join(domain.Directory, "Repositories")
+		paths.DomainManagers = filepath.Join(domain.Directory, "Managers")
+		paths.DomainData = filepath.Join(domain.Directory, "Data")
+	}
+
+	if domainShared := solutionInfo.GetProject(ProjectTypeDomainShared); domainShared != nil {
+		paths.DomainShared = domainShared.Directory
+		paths.DomainSharedConstants = filepath.Join(domainShared.Directory, "Constants")
+		paths.DomainSharedEvents = filepath.Join(domainShared.Directory, "Events")
+		paths.DomainSharedEnums = filepath.Join(domainShared.Directory, "Enums")
+		paths.DomainSharedLocalization = filepath.Join(domainShared.Directory, "Localization", moduleName)
+	}
+
+	if appContracts := solutionInfo.GetProject(ProjectTypeApplicationContracts); appContracts != nil {
+		paths.ApplicationContracts = appContracts.Directory
+		paths.ContractsPermissions = filepath.Join(appContracts.Directory, "Permissions")
+		paths.ContractsDTOs = appContracts.Directory // DTOs are organized by entity
+		paths.ContractsServices = filepath.Join(appContracts.Directory, "Services")
+	}
+
+	if app := solutionInfo.GetProject(ProjectTypeApplication); app != nil {
+		paths.Application = app.Directory
+		paths.ApplicationServices = filepath.Join(app.Directory, "Services")
+		paths.ApplicationAutoMapper = filepath.Join(app.Directory, "AutoMapper")
+		paths.ApplicationValidators = filepath.Join(app.Directory, "Validators")
+		paths.ApplicationEventHandlers = filepath.Join(app.Directory, "EventHandlers")
+	}
+
+	if httpApi := solutionInfo.GetProject(ProjectTypeHttpApi); httpApi != nil {
+		paths.HttpApi = httpApi.Directory
+		paths.HttpApiControllers = filepath.Join(httpApi.Directory, "Controllers")
+	}
+
+	if efCore := solutionInfo.GetProject(ProjectTypeEntityFrameworkCore); efCore != nil {
+		paths.EntityFrameworkCore = efCore.Directory
+		paths.EFCoreConfigurations = filepath.Join(efCore.Directory, "EntityFrameworkCore", "Configurations")
+		paths.EFCoreRepositories = filepath.Join(efCore.Directory, "EntityFrameworkCore", "Repositories")
+	}
+
+	if mongodb := solutionInfo.GetProject(ProjectTypeMongoDB); mongodb != nil {
+		paths.MongoDB = mongodb.Directory
+		paths.MongoDBRepositories = filepath.Join(mongodb.Directory, "MongoDB", "Repositories")
+	}
+
+	// Validate required paths exist
+	if paths.Domain == "" {
+		return nil, fmt.Errorf("Domain project not found in solution")
+	}
+
+	return paths, nil
+}
+
+// EnsureDirectories creates all necessary directories
+func (p *LayerPaths) EnsureDirectories() error {
+	directories := []string{
+		p.DomainEntities,
+		p.DomainRepositories,
+		p.DomainManagers,
+		p.DomainData,
+		p.DomainSharedConstants,
+		p.DomainSharedEvents,
+		p.DomainSharedEnums,
+		p.DomainSharedLocalization,
+		p.ContractsPermissions,
+		p.ContractsServices,
+		p.ApplicationServices,
+		p.ApplicationAutoMapper,
+		p.ApplicationValidators,
+		p.ApplicationEventHandlers,
+		p.HttpApiControllers,
+		p.EFCoreConfigurations,
+		p.EFCoreRepositories,
+		p.MongoDBRepositories,
+	}
+
+	for _, dir := range directories {
+		if dir == "" {
+			continue
+		}
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	return nil
+}
+
+// GetEntityDTOPath returns the path for DTOs of a specific entity
+func (p *LayerPaths) GetEntityDTOPath(entityName string) string {
+	if p.ContractsDTOs == "" {
+		return ""
+	}
+	return filepath.Join(p.ContractsDTOs, entityName)
+}
+
+// GetDbContextPath returns the path to the DbContext file
+func (p *LayerPaths) GetDbContextPath(serviceName string) string {
+	if p.EntityFrameworkCore == "" {
+		return ""
+	}
+	return filepath.Join(p.EntityFrameworkCore, "EntityFrameworkCore", serviceName+"DbContext.cs")
+}
+
+// GetIDbContextPath returns the path to the IDbContext file
+func (p *LayerPaths) GetIDbContextPath(serviceName string) string {
+	if p.EntityFrameworkCore == "" {
+		return ""
+	}
+	return filepath.Join(p.EntityFrameworkCore, "EntityFrameworkCore", "I"+serviceName+"DbContext.cs")
+}
+
+// GetPermissionsFilePath returns the path to the permissions file
+func (p *LayerPaths) GetPermissionsFilePath(serviceName string) string {
+	if p.ContractsPermissions == "" {
+		return ""
+	}
+	return filepath.Join(p.ContractsPermissions, serviceName+"Permissions.cs")
+}
+
+// GetPermissionProviderPath returns the path to the permission provider file
+func (p *LayerPaths) GetPermissionProviderPath(serviceName string) string {
+	if p.ContractsPermissions == "" {
+		return ""
+	}
+	return filepath.Join(p.ContractsPermissions, serviceName+"PermissionDefinitionProvider.cs")
+}
+

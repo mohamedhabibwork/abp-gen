@@ -1,0 +1,20 @@
+using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Repositories;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore;
+
+namespace {{.NamespaceRoot}}.EntityFrameworkCore.Repositories;
+
+public class EfCore{{.EntityName}}Repository : EfCoreRepository<{{.ModuleName}}DbContext, {{.EntityName}}, {{.PrimaryKeyType}}>, I{{.EntityName}}Repository
+{
+    public EfCore{{.EntityName}}Repository(IDbContextProvider<{{.ModuleName}}DbContext> dbContextProvider)
+        : base(dbContextProvider)
+    {
+    }
+
+    // Add custom repository methods here
+}
+

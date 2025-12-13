@@ -1,0 +1,222 @@
+{
+  "solution": {
+    "name": "SDDUMP",
+    "moduleName": "ProductService",
+    "namespaceRoot": "SDDUMP.ProductService",
+    "abpVersion": "9.0",
+    "primaryKeyType": "Guid",
+    "dbProvider": "efcore",
+    "generateControllers": true
+  },
+  "entities": [
+    {
+      "name": "Category",
+      "tableName": "Categories",
+      "entityType": "FullAuditedAggregateRoot",
+      "properties": [
+        {
+          "name": "Name",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 100,
+          "nullable": false
+        },
+        {
+          "name": "Description",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 500,
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "tableName": "Products",
+      "entityType": "FullAuditedAggregateRoot",
+      "properties": [
+        {
+          "name": "Name",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 200,
+          "nullable": false
+        },
+        {
+          "name": "Description",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 1000,
+          "nullable": true
+        },
+        {
+          "name": "Price",
+          "type": "decimal",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "Stock",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "0"
+        },
+        {
+          "name": "IsActive",
+          "type": "bool",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "true"
+        }
+      ],
+      "relations": {
+        "oneToMany": [
+          {
+            "targetEntity": "ProductReview",
+            "foreignKeyName": "ProductId",
+            "navigationProperty": "Reviews",
+            "isCollection": true
+          }
+        ],
+        "manyToMany": [
+          {
+            "targetEntity": "Category",
+            "joinEntity": "ProductCategory",
+            "navigationProperty": "Categories"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProductReview",
+      "tableName": "ProductReviews",
+      "entityType": "FullAuditedAggregateRoot",
+      "properties": [
+        {
+          "name": "ProductId",
+          "type": "Guid",
+          "isRequired": true,
+          "nullable": false,
+          "isForeignKey": true,
+          "targetEntity": "Product"
+        },
+        {
+          "name": "Rating",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "Comment",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 2000,
+          "nullable": true
+        },
+        {
+          "name": "ReviewerName",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 100,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "tableName": "Orders",
+      "entityType": "FullAuditedAggregateRoot",
+      "properties": [
+        {
+          "name": "OrderNumber",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 50,
+          "nullable": false
+        },
+        {
+          "name": "OrderDate",
+          "type": "DateTime",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "TotalAmount",
+          "type": "decimal",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "Status",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "0"
+        }
+      ],
+      "relations": {
+        "oneToMany": [
+          {
+            "targetEntity": "OrderItem",
+            "foreignKeyName": "OrderId",
+            "navigationProperty": "OrderItems",
+            "isCollection": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrderItem",
+      "tableName": "OrderItems",
+      "entityType": "AuditedAggregateRoot",
+      "properties": [
+        {
+          "name": "OrderId",
+          "type": "Guid",
+          "isRequired": true,
+          "nullable": false,
+          "isForeignKey": true,
+          "targetEntity": "Order"
+        },
+        {
+          "name": "ProductId",
+          "type": "Guid",
+          "isRequired": true,
+          "nullable": false,
+          "isForeignKey": true,
+          "targetEntity": "Product"
+        },
+        {
+          "name": "Quantity",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "UnitPrice",
+          "type": "decimal",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "TotalPrice",
+          "type": "decimal",
+          "isRequired": true,
+          "nullable": false
+        }
+      ]
+    }
+  ],
+  "options": {
+    "useAuditedAggregateRoot": true,
+    "useSoftDelete": true,
+    "useConcurrencyStamp": true,
+    "useExtraProperties": true,
+    "useLocalization": true,
+    "localizationCultures": ["en", "ar"],
+    "validationType": "fluentvalidation",
+    "generateEventHandlers": true
+  }
+}
+

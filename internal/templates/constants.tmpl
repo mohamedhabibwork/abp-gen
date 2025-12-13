@@ -1,0 +1,21 @@
+namespace {{.NamespaceRoot}}.Constants
+{
+    public static class {{.EntityName}}Constants
+    {
+        public const string DefaultSorting = "CreationTime desc";
+        
+        public static class CacheKeys
+        {
+            public const string ListCacheKey = "All{{.EntityName}}List";
+            public const string SingleKey = "{{.EntityName}}";
+        }
+
+        public static class ValidationConstants
+        {
+{{- range $key, $value := .ValidationConstants}}
+            public const int {{$key}} = {{$value}};
+{{- end}}
+        }
+    }
+}
+

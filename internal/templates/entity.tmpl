@@ -1,0 +1,76 @@
+using System;
+using Volo.Abp.Domain.Entities.Auditing;
+using System.ComponentModel.DataAnnotations;
+{{- if .HasEvents}}
+using {{.NamespaceRoot}}.Events;
+{{- end}}
+using {{.NamespaceRoot}}.Constants;
+using Volo.Abp.Domain.Values;
+using System.Collections.Generic;
+using Volo.Abp.Domain.Entities;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace {{.NamespaceRoot}}.Domain.Entities
+{
+    public class {{.EntityName}} : {{.EntityType}}<{{.PrimaryKeyType}}>
+    {
+{{- range .Properties}}
+    {{- if .IsRequired}}
+        [Required]
+    {{- end}}
+    {{- if .MaxLength}}
+        [MaxLength({{$.EntityName}}Constants.ValidationConstants.{{.Name}}MaxLength)]
+    {{- end}}
+    {{- if .IsForeignKey}}
+        [ForeignKey("{{.Name}}Id")]
+    {{- end}}
+        public {{.Type}}{{if .Nullable}}?{{end}} {{.Name}} { get; set; }
+{{- end}}
+
+{{- if .HasRelations}}
+    {{- range .OneToManyRelations}}
+        public virtual ICollection<{{.TargetEntity}}> {{.NavigationProperty}} { get; set; }
+    {{- end}}
+    {{- range .ManyToManyRelations}}
+        public virtual ICollection<{{.TargetEntity}}> {{.NavigationProperty}} { get; set; }
+    {{- end}}
+{{- end}}
+        
+        protected {{.EntityName}}() { }
+
+        public {{.EntityName}}({{.PrimaryKeyType}} id{{range .NonForeignKeyProperties}}, {{.Type}} {{. Name | lowerFirst}}{{end}}){{if ne .EntityType "ValueObject"}} : base(id){{end}}
+        {
+{{- range .NonForeignKeyProperties}}
+            Set{{.Name}}({{.Name | lowerFirst}});
+{{- end}}
+        }
+
+{{- range .NonForeignKeyProperties}}
+        public void Set{{.Name}}({{.Type}} {{.Name | lowerFirst}}) => {{.Name}} = {{.Name | lowerFirst}};
+{{- end}}
+
+{{- if .HasEvents}}
+        public void PublishDistributedEvent({{.EntityName}}Eto eto)
+        {
+            AddDistributedEvent(eto);
+        }
+{{- end}}
+
+{{- if .IsValueObject}}
+        protected override IEnumerable<object> GetAtomicValues()
+        {
+{{- range .Properties}}
+            yield return {{.Name}};
+{{- end}}
+        }
+{{- end}}
+
+        public void Update({{range $i, $p := .NonForeignKeyProperties}}{{if $i}}, {{end}}{{$p.Type}} {{$p.Name | lowerFirst}}{{end}})
+        {
+{{- range .NonForeignKeyProperties}}
+            Set{{.Name}}({{.Name | lowerFirst}});
+{{- end}}
+        }
+    }
+}
+

@@ -1,0 +1,72 @@
+using System;
+using System.Threading.Tasks;
+using Volo.Abp.Domain.Services;
+using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Repositories;
+using Volo.Abp;
+
+namespace {{.NamespaceRoot}}.Domain.Managers
+{
+    public class {{.EntityName}}Manager : DomainService
+    {
+        private readonly I{{.EntityName}}Repository _repository;
+
+        public {{.EntityName}}Manager(I{{.EntityName}}Repository repository)
+        {
+            _repository = repository;
+        }
+
+        public async Task<{{.EntityName}}> CreateAsync(
+            {{.PrimaryKeyType}} id{{range .NonForeignKeyProperties}},
+            {{.Type}} {{.Name | lowerFirst}}{{end}})
+        {
+            // Add business logic validation here
+            // Example: Check for duplicates, validate business rules, etc.
+            
+            // await CheckNameExistsAsync({{range .NonForeignKeyProperties}}{{if eq .Name "Name"}}{{.Name | lowerFirst}}{{end}}{{end}});
+
+            var entity = new {{.EntityName}}(
+                id{{range .NonForeignKeyProperties}},
+                {{.Name | lowerFirst}}{{end}}
+            );
+
+            // Add any additional business logic here
+            // Example: Set default values, calculate derived properties, etc.
+
+            return entity;
+        }
+
+        public async Task<{{.EntityName}}> UpdateAsync(
+            {{.EntityName}} entity{{range .NonForeignKeyProperties}},
+            {{.Type}} {{.Name | lowerFirst}}{{end}})
+        {
+            // Add business logic validation here
+            // Example: Check for duplicates, validate business rules, etc.
+
+            entity.Update({{range $i, $p := .NonForeignKeyProperties}}{{if $i}}, {{end}}{{$p.Name | lowerFirst}}{{end}});
+
+            return entity;
+        }
+
+        public async Task DeleteAsync({{.EntityName}} entity)
+        {
+            // Add business logic validation here
+            // Example: Check if entity can be deleted, cascade delete rules, etc.
+
+            await _repository.DeleteAsync(entity);
+        }
+
+        // Add custom business logic methods here
+        // Example:
+        // private async Task CheckNameExistsAsync(string name)
+        // {
+        //     var exists = await _repository.AnyAsync(x => x.Name == name);
+        //     if (exists)
+        //     {
+        //         throw new BusinessException("{{.NamespaceRoot}}:{{.EntityName}}NameAlreadyExists")
+        //             .WithData("Name", name);
+        //     }
+        // }
+    }
+}
+

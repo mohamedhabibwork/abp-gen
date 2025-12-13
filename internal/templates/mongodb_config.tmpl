@@ -1,0 +1,21 @@
+using MongoDB.Driver;
+using Volo.Abp.MongoDB;
+using {{.NamespaceRoot}}.Domain.Entities;
+
+namespace {{.NamespaceRoot}}.MongoDB;
+
+public static class {{.EntityName}}MongoDbConfiguration
+{
+    public static void Configure()
+    {
+        BsonClassMap.RegisterClassMap<{{.EntityName}}>(map =>
+        {
+            map.AutoMap();
+            map.SetIgnoreExtraElements(true);
+            
+            // Configure specific properties if needed
+            // map.MapProperty(x => x.PropertyName);
+        });
+    }
+}
+

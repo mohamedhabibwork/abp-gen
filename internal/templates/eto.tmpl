@@ -1,0 +1,21 @@
+using System;
+using Volo.Abp.Domain.Entities.Events.Distributed;
+
+namespace {{.NamespaceRoot}}.Events
+{
+    [Serializable]
+    public class {{.EntityName}}Eto : EtoBase
+    {
+        public {{.PrimaryKeyType}} Id { get; set; }
+{{- range .Properties}}
+    {{- if .IsForeignKey}}
+        public string {{.Name}}Name { get; set; }
+    {{- else}}
+        public {{.Type}}{{if .Nullable}}?{{end}} {{.Name}} { get; set; }
+    {{- end}}
+{{- end}}
+        public DateTime CreationTime { get; set; }
+        public DateTime? LastModificationTime { get; set; }
+    }
+}
+

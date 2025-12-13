@@ -1,0 +1,25 @@
+using AutoMapper;
+using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
+{{- if .HasEvents}}
+using {{.NamespaceRoot}}.Events;
+{{- end}}
+
+namespace {{.NamespaceRoot}}.Application.AutoMapper
+{
+    public class {{.EntityName}}Profile : Profile
+    {
+        public {{.EntityName}}Profile()
+        {
+            CreateMap<{{.EntityName}}, {{.EntityName}}Dto>().ReverseMap();
+{{- if not .IsValueObject}}            
+            CreateMap<Create{{.EntityName}}Dto, {{.EntityName}}>().ReverseMap();
+            CreateMap<Update{{.EntityName}}Dto, {{.EntityName}}>().ReverseMap();
+{{- end}}
+{{- if .HasEvents}}            
+            CreateMap<{{.EntityName}}, {{.EntityName}}Eto>().ReverseMap();
+{{- end}}        
+        }
+    }
+}
+

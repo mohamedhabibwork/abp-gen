@@ -1,0 +1,17 @@
+using System;
+using Volo.Abp.Application.Dtos;
+
+namespace {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}
+{
+    public class {{.EntityName}}Dto : AuditedEntityDto<{{.PrimaryKeyType}}>
+    {
+{{- range .Properties}}
+    {{- if .IsForeignKey}}
+        public string {{.Name}}Name { get; set; }
+    {{- else}}
+        public {{.Type}}{{if .Nullable}}?{{end}} {{.Name}} { get; set; }
+    {{- end}}
+{{- end}}    
+    }
+}
+

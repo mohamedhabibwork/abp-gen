@@ -1,0 +1,7 @@
+
+        var {{.EntityNameLower}}Permission = {{.ModuleName}}Group.AddPermission(
+            {{.ModuleName}}Permissions.{{.EntityName}}Management.Default, L("Permission:{{.EntityName}}"));
+        {{.EntityNameLower}}Permission.AddChild({{.ModuleName}}Permissions.{{.EntityName}}Management.Create, L("Permission:{{.EntityName}}.Create"));
+        {{.EntityNameLower}}Permission.AddChild({{.ModuleName}}Permissions.{{.EntityName}}Management.Update, L("Permission:{{.EntityName}}.Update"));
+        {{.EntityNameLower}}Permission.AddChild({{.ModuleName}}Permissions.{{.EntityName}}Management.Delete, L("Permission:{{.EntityName}}.Delete"));
+

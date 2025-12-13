@@ -1,0 +1,18 @@
+using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Repositories;
+using System;
+using Volo.Abp.Domain.Repositories.MongoDB;
+using Volo.Abp.MongoDB;
+
+namespace {{.NamespaceRoot}}.MongoDB.Repositories;
+
+public class Mongo{{.EntityName}}Repository : MongoDbRepository<{{.ModuleName}}MongoDbContext, {{.EntityName}}, {{.PrimaryKeyType}}>, I{{.EntityName}}Repository
+{
+    public Mongo{{.EntityName}}Repository(IMongoDbContextProvider<{{.ModuleName}}MongoDbContext> dbContextProvider)
+        : base(dbContextProvider)
+    {
+    }
+
+    // Add custom repository methods here
+}
+

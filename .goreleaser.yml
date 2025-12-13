@@ -1,0 +1,111 @@
+# GoReleaser configuration for abp-gen
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - id: abp-gen
+    main: ./cmd/abp-gen
+    binary: abp-gen
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.BuildDate={{.Date}}
+      - -X main.GitCommit={{.Commit}}
+
+archives:
+  - id: abp-gen-archive
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - examples/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^ci:'
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: habib
+    name: abp-gen
+  draft: false
+  prerelease: auto
+  name_template: "{{.ProjectName}} v{{.Version}}"
+  header: |
+    ## ABP Code Generator v{{.Version}}
+    
+    Cross-platform CLI tool for generating ABP Framework C# code.
+    
+    ### Installation
+    
+    Download the appropriate binary for your platform below.
+    
+    ### What's Changed
+  footer: |
+    **Full Changelog**: https://github.com/mohamedhabibwork/abp-gen/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+brews:
+  - name: abp-gen
+    tap:
+      owner: habib
+      name: homebrew-tap
+    folder: Formula
+    homepage: https://github.com/mohamedhabibwork/abp-gen
+    description: "Cross-platform CLI tool for generating ABP Framework C# code"
+    license: MIT
+    test: |
+      system "#{bin}/abp-gen --version"
+    install: |
+      bin.install "abp-gen"
+
+nfpms:
+  - id: abp-gen-nfpm
+    package_name: abp-gen
+    homepage: https://github.com/mohamedhabibwork/abp-gen
+    description: "Cross-platform CLI tool for generating ABP Framework C# code"
+    maintainer: Your Name <your.email@example.com>
+    license: MIT
+    vendor: Your Company
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    contents:
+      - src: ./README.md
+        dst: /usr/share/doc/abp-gen/README.md
+      - src: ./examples/schema.json
+        dst: /usr/share/doc/abp-gen/examples/schema.json
+

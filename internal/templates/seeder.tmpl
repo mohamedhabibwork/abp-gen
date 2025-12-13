@@ -1,0 +1,39 @@
+using System;
+using System.Threading.Tasks;
+using Volo.Abp.Data;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+using {{.NamespaceRoot}}.Domain.Entities;
+using Volo.Abp.Guids;
+
+namespace {{.NamespaceRoot}}.Domain.Data
+{
+    public class {{.EntityName}}DataSeeder : IDataSeedContributor, ITransientDependency
+    {
+        private readonly IRepository<{{.EntityName}}, {{.PrimaryKeyType}}> _repository;
+        private readonly IGuidGenerator _guidGenerator;
+
+        public {{.EntityName}}DataSeeder(
+            IRepository<{{.EntityName}}, {{.PrimaryKeyType}}> repository,
+            IGuidGenerator guidGenerator)
+        {
+            _repository = repository;
+            _guidGenerator = guidGenerator;
+        }
+
+        public async Task SeedAsync(DataSeedContext context)
+        {
+            if (await _repository.GetCountAsync() > 0)
+            {
+                return;
+            }
+
+            // TODO: Add seed data
+            // await _repository.InsertAsync(new {{.EntityName}}(
+            //     _guidGenerator.Create(),
+            //     // Add properties here
+            // ), autoSave: true);
+        }
+    }
+}
+

@@ -1,0 +1,205 @@
+using System;
+using Volo.Abp.Application.Services;
+using {{.NamespaceRoot}}.Application.Contracts.Services;
+using {{.NamespaceRoot}}.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Managers;
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
+using Volo.Abp.Domain.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using {{.NamespaceRoot}}.Permissions;
+using {{.NamespaceRoot}}.Constants;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Caching;
+using Volo.Abp.EventBus.Distributed;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using static {{.NamespaceRoot}}.Permissions.{{.ModuleName}}Permissions;
+{{- if .HasEvents}}
+using {{.NamespaceRoot}}.Events;
+{{- end}}
+using Volo.Abp;
+
+namespace {{.NamespaceRoot}}.Application.Services
+{
+    [RemoteService(false)]
+    [Authorize({{.EntityName}}Management.Default)]
+    public class {{.EntityName}}AppService : 
+        CrudAppService<
+            {{.EntityName}},
+            {{.EntityName}}Dto,
+            {{.PrimaryKeyType}},
+            PagedAndSortedResultRequestDto,
+            Create{{.EntityName}}Dto,
+            Update{{.EntityName}}Dto>,
+        I{{.EntityName}}AppService
+    {
+        private readonly IDistributedCache<{{.EntityName}}Dto> _cache;
+        private readonly IDistributedCache<List<{{.EntityName}}Dto>> _listCache;
+        private readonly {{.EntityName}}Manager _manager;
+        private readonly IDistributedEventBus _distributedEventBus;
+
+        public {{.EntityName}}AppService(
+            IRepository<{{.EntityName}}, {{.PrimaryKeyType}}> repository,
+            IDistributedCache<{{.EntityName}}Dto> cache,
+            IDistributedCache<List<{{.EntityName}}Dto>> listCache,
+            {{.EntityName}}Manager manager,
+            IDistributedEventBus distributedEventBus)
+            : base(repository)
+        {
+            _cache = cache;
+            _listCache = listCache;
+            _manager = manager;
+            _distributedEventBus = distributedEventBus;
+
+            GetPolicyName = {{.EntityName}}Management.Default;
+            GetListPolicyName = {{.EntityName}}Management.Default;
+            CreatePolicyName = {{.EntityName}}Management.Create;
+            UpdatePolicyName = {{.EntityName}}Management.Update;
+            DeletePolicyName = {{.EntityName}}Management.Delete;
+        }
+
+        public override async Task<{{.EntityName}}Dto> GetAsync({{.PrimaryKeyType}} id)
+        {
+            var cacheKey = $"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}";
+            var cachedDto = await _cache.GetAsync(cacheKey);
+            
+            if (cachedDto != null)
+            {
+                return cachedDto;
+            }
+
+            var entity = await Repository.GetAsync(id);
+            var dto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Dto>(entity);
+            
+            // Set cache with expiration (optional: configure in appsettings.json)
+            await _cache.SetAsync(cacheKey, dto, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+            });
+            
+            return dto;
+        }
+
+        public override async Task<PagedResultDto<{{.EntityName}}Dto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            if (input.Sorting.IsNullOrWhiteSpace())
+            {
+                input.Sorting = {{.EntityName}}Constants.DefaultSorting;
+            }
+
+            // Try to get from list cache
+            var listCacheKey = {{.EntityName}}Constants.CacheKeys.ListCacheKey;
+            var cachedList = await _listCache.GetAsync(listCacheKey);
+            if (cachedList != null && input.SkipCount == 0 && input.MaxResultCount <= cachedList.Count)
+            {
+                // Return cached list if it matches the request
+                var pagedList = cachedList.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
+                return new PagedResultDto<{{.EntityName}}Dto>
+                {
+                    TotalCount = cachedList.Count,
+                    Items = pagedList
+                };
+            }
+
+            var result = await base.GetListAsync(input);
+
+            // Cache individual items
+            foreach (var dto in result.Items)
+            {
+                var cacheKey = $"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{dto.Id}";
+                await _cache.SetAsync(cacheKey, dto, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                });
+            }
+
+            return result;
+        }
+
+        public override async Task<{{.EntityName}}Dto> CreateAsync(Create{{.EntityName}}Dto input)
+        {
+            await CheckCreatePolicyAsync();
+
+            // FluentValidation is automatically called by ABP framework
+            // Validator: Create{{.EntityName}}DtoValidator
+
+            // Use manager for business logic
+            var entity = await _manager.CreateAsync(
+                GuidGenerator.Create(){{range .NonForeignKeyProperties}},
+                input.{{.Name}}{{end}}
+            );
+
+            await Repository.InsertAsync(entity, autoSave: true);
+
+            // Clear caches
+            await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
+{{- if .HasEvents}}
+
+            // Publish distributed event via event bus
+            var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
+            eto.CreationTime = DateTime.UtcNow;
+            await _distributedEventBus.PublishAsync(eto);
+{{- end}}            
+            return await MapToGetOutputDtoAsync(entity);
+        }
+
+        public override async Task<{{.EntityName}}Dto> UpdateAsync({{.PrimaryKeyType}} id, Update{{.EntityName}}Dto input)
+        {
+            await CheckUpdatePolicyAsync();
+
+            // FluentValidation is automatically called by ABP framework
+            // Validator: Update{{.EntityName}}DtoValidator
+
+            var entity = await GetEntityByIdAsync(id);
+
+            // Use manager for business logic
+            await _manager.UpdateAsync(
+                entity{{range .NonForeignKeyProperties}},
+                input.{{.Name}}{{end}}
+            );
+
+            await Repository.UpdateAsync(entity, autoSave: true);
+
+            // Clear caches
+            await _cache.RemoveAsync($"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}");
+            await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
+{{- if .HasEvents}}
+
+            // Publish distributed event via event bus
+            var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
+            eto.LastModificationTime = DateTime.UtcNow;
+            await _distributedEventBus.PublishAsync(eto);
+{{- end}}            
+            return await MapToGetOutputDtoAsync(entity);
+        }
+
+        public override async Task DeleteAsync({{.PrimaryKeyType}} id)
+        {
+            await CheckDeletePolicyAsync();
+
+            var entity = await GetEntityByIdAsync(id);
+
+            // Use manager for business logic (e.g., validation, cascade delete)
+            await _manager.DeleteAsync(entity);
+
+            // Clear caches
+            await _cache.RemoveAsync($"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}");
+            await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
+{{- if .HasEvents}}
+
+            // Publish distributed event via event bus
+            var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
+            await _distributedEventBus.PublishAsync(eto);
+{{- end}}
+        }
+{{- if ne .EntityType "Entity"}}
+
+        protected override IQueryable<{{.EntityName}}> ApplyDefaultSorting(IQueryable<{{.EntityName}}> query)
+        {
+            return query.OrderByDescending(x => x.CreationTime);
+        }
+{{- end}}
+    }
+}
+

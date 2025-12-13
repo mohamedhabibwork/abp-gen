@@ -1,0 +1,41 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Volo.Abp.EntityFrameworkCore.Modeling;
+using {{.NamespaceRoot}}.Domain.Entities;
+
+namespace {{.NamespaceRoot}}.EntityFrameworkCore.Configurations;
+
+public class {{.EntityName}}Configuration : IEntityTypeConfiguration<{{.EntityName}}>
+{
+    public void Configure(EntityTypeBuilder<{{.EntityName}}> builder)
+    {
+        builder.ToTable({{.ModuleName}}DbProperties.DbTablePrefix + "{{.TableName}}", {{.ModuleName}}DbProperties.DbSchema);
+
+        builder.ConfigureByConvention();
+
+        // Configure properties
+{{- range .Properties}}
+    {{- if .MaxLength}}
+        builder.Property(x => x.{{.Name}}).HasMaxLength({{.MaxLength}});
+    {{- end}}
+    {{- if .IsRequired}}
+        builder.Property(x => x.{{.Name}}).IsRequired();
+    {{- end}}
+{{- end}}
+
+        // Configure relationships
+{{- range .OneToManyRelations}}
+        builder.HasMany(x => x.{{.NavigationProperty}})
+               .WithOne()
+               .HasForeignKey("{{.ForeignKeyName}}")
+               .IsRequired(false);
+{{- end}}
+
+{{- range .ManyToManyRelations}}
+        builder.HasMany(x => x.{{.NavigationProperty}})
+               .WithMany()
+               .UsingEntity("{{.JoinEntity}}");
+{{- end}}
+    }
+}
+
