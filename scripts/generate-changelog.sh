@@ -100,17 +100,36 @@ if [ -f "$CHANGELOG_FILE" ]; then
     
     # Insert after "## [Unreleased]" section
     if grep -q "## \[Unreleased\]" "$CHANGELOG_FILE"; then
-        awk -v new_entry="$(cat $TEMP_FILE)" '
-            /^## \[Unreleased\]/ {
-                print
-                getline
-                print
-                print new_entry
-                next
-            }
-            { print }
-        ' "$CHANGELOG_FILE" > "${CHANGELOG_FILE}.new"
-        mv "${CHANGELOG_FILE}.new" "$CHANGELOG_FILE"
+        # Find the line number after "## [Unreleased]" and the blank line
+        INSERT_LINE=$(awk '/^## \[Unreleased\]/ {found=1; next} found && /^$/ {print NR; exit}' "$CHANGELOG_FILE")
+        
+        if [ -n "$INSERT_LINE" ]; then
+            # Insert the new entry after the blank line following [Unreleased]
+            # Use head and tail to split the file, then insert the new content
+            {
+                head -n "$INSERT_LINE" "$CHANGELOG_FILE"
+                cat "$TEMP_FILE"
+                tail -n +$((INSERT_LINE + 1)) "$CHANGELOG_FILE"
+            } > "${CHANGELOG_FILE}.new"
+            mv "${CHANGELOG_FILE}.new" "$CHANGELOG_FILE"
+        else
+            # Fallback: use awk to read from temp file directly
+            awk -v temp_file="$TEMP_FILE" '
+                /^## \[Unreleased\]/ {
+                    print
+                    getline
+                    print
+                    # Read and print the temp file
+                    while ((getline line < temp_file) > 0) {
+                        print line
+                    }
+                    close(temp_file)
+                    next
+                }
+                { print }
+            ' "$CHANGELOG_FILE" > "${CHANGELOG_FILE}.new"
+            mv "${CHANGELOG_FILE}.new" "$CHANGELOG_FILE"
+        fi
     else
         # Prepend to file
         cat "$TEMP_FILE" "$CHANGELOG_FILE" > "${CHANGELOG_FILE}.new"
