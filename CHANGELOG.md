@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.1] - 2025-12-14
+
+### Changed
+Refactor changelog generation script for improved entry insertion
+
+
+[0.0.1]: https://github.com/mohamedhabibwork/abp-gen/releases/tag/v0.0.1
+
 ### Added
 - Smart file merging system with conflict resolution
 - Domain managers for business logic encapsulation
