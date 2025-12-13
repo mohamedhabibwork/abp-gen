@@ -4,9 +4,8 @@
 *.dll
 *.so
 *.dylib
-./abp-gen
+abp-gen
 abp-gen.exe
-!./cmd/abp-gen/
 # Test binary, built with `go test -c`
 *.test
 
