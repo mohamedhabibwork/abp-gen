@@ -28,14 +28,14 @@ type ProjectInfo struct {
 type ProjectType string
 
 const (
-	ProjectTypeDomain              ProjectType = "Domain"
-	ProjectTypeDomainShared        ProjectType = "Domain.Shared"
+	ProjectTypeDomain               ProjectType = "Domain"
+	ProjectTypeDomainShared         ProjectType = "Domain.Shared"
 	ProjectTypeApplicationContracts ProjectType = "Application.Contracts"
-	ProjectTypeApplication         ProjectType = "Application"
-	ProjectTypeHttpApi             ProjectType = "HttpApi"
-	ProjectTypeEntityFrameworkCore ProjectType = "EntityFrameworkCore"
-	ProjectTypeMongoDB             ProjectType = "MongoDB"
-	ProjectTypeUnknown             ProjectType = "Unknown"
+	ProjectTypeApplication          ProjectType = "Application"
+	ProjectTypeHttpApi              ProjectType = "HttpApi"
+	ProjectTypeEntityFrameworkCore  ProjectType = "EntityFrameworkCore"
+	ProjectTypeMongoDB              ProjectType = "MongoDB"
+	ProjectTypeUnknown              ProjectType = "Unknown"
 )
 
 // FindSolution searches for a .sln file starting from the current directory
@@ -177,4 +177,3 @@ func (s *SolutionInfo) GetProjectDirectory(projectType ProjectType) string {
 	}
 	return project.Directory
 }
-

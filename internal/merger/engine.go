@@ -25,12 +25,12 @@ type Engine struct {
 	astMerger        *ASTMerger
 	jsonMerger       *JSONMerger
 	conflictResolver *ConflictResolver
-	
+
 	// Configuration
-	Force      bool
-	MergeAll   bool
-	MergeMode  MergeDecision
-	Verbose    bool
+	Force     bool
+	MergeAll  bool
+	MergeMode MergeDecision
+	Verbose   bool
 }
 
 // NewEngine creates a new merge engine
@@ -54,12 +54,12 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 	if err != nil {
 		return "", false, err
 	}
-	
+
 	// If file doesn't exist, return new content
 	if !fileExists.Exists {
 		return newContent, true, nil
 	}
-	
+
 	// If force mode, overwrite
 	if e.Force {
 		if e.Verbose {
@@ -67,7 +67,7 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 		}
 		return newContent, true, nil
 	}
-	
+
 	// Check if file can be merged
 	if !e.detector.CanMerge(fileExists.FileType) {
 		// File type doesn't support merging
@@ -76,7 +76,7 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 		}
 		return "", false, nil
 	}
-	
+
 	// Prompt user for merge decision if not in merge-all mode
 	var decision MergeDecision
 	if e.MergeAll && e.MergeMode != "" {
@@ -87,7 +87,7 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 		if err != nil {
 			return "", false, err
 		}
-		
+
 		// Ask if user wants to apply to all
 		if !e.MergeAll {
 			applyToAll, err := prompts.PromptMergeAll()
@@ -100,7 +100,7 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 			}
 		}
 	}
-	
+
 	// Handle user decision
 	switch decision {
 	case MergeDecisionOverwrite:
@@ -108,23 +108,23 @@ func (e *Engine) MergeFile(path string, newContent string) (string, bool, error)
 			fmt.Printf("[OVERWRITE] %s\n", path)
 		}
 		return newContent, true, nil
-		
+
 	case MergeDecisionSkip:
 		if e.Verbose {
 			fmt.Printf("[SKIP] %s\n", path)
 		}
 		return "", false, nil
-		
+
 	case MergeDecisionShowDiff:
 		// Show diff and prompt again
 		// For now, fall through to merge decision
 		// TODO: Implement diff display
 		fmt.Println("Diff display not yet implemented, falling back to merge")
 		return e.performMerge(path, fileExists, newContent)
-		
+
 	case MergeDecisionMerge:
 		return e.performMerge(path, fileExists, newContent)
-		
+
 	default:
 		return "", false, nil
 	}
@@ -137,57 +137,57 @@ func (e *Engine) performMerge(path string, fileExists *FileExistence, newContent
 	if err != nil {
 		return "", false, fmt.Errorf("failed to read existing file: %w", err)
 	}
-	
+
 	existing := string(existingContent)
-	
+
 	// Select merge strategy
 	strategy := e.classifier.GetMergeStrategy(fileExists.FileType)
-	
+
 	var merged string
 	var conflicts []Conflict
-	
+
 	// Perform merge based on strategy
 	switch strategy {
 	case MergeStrategyPattern:
 		merged, conflicts, err = e.patternMerger.Merge(existing, newContent, fileExists.FileType)
-		
+
 	case MergeStrategyAST:
 		merged, conflicts, err = e.astMerger.Merge(existing, newContent, fileExists.FileType)
-		
+
 	case MergeStrategyJSON:
 		merged, conflicts, err = e.jsonMerger.Merge(existing, newContent)
-		
+
 	default:
 		return "", false, fmt.Errorf("unsupported merge strategy for file type %v", fileExists.FileType)
 	}
-	
+
 	if err != nil {
 		return "", false, fmt.Errorf("merge failed: %w", err)
 	}
-	
+
 	// Handle conflicts if any
 	if len(conflicts) > 0 {
 		if e.Verbose {
 			fmt.Printf("[CONFLICTS] %s - %d conflict(s) detected\n", path, len(conflicts))
 		}
-		
+
 		// Prompt user to resolve conflicts
 		resolutions, err := prompts.PromptConflictBatch(conflicts)
 		if err != nil {
 			return "", false, fmt.Errorf("failed to resolve conflicts: %w", err)
 		}
-		
+
 		// Apply resolutions
 		merged, err = e.conflictResolver.ResolveConflicts(existing, conflicts, resolutions, newContent)
 		if err != nil {
 			return "", false, fmt.Errorf("failed to apply conflict resolutions: %w", err)
 		}
 	}
-	
+
 	if e.Verbose {
 		fmt.Printf("[MERGED] %s\n", path)
 	}
-	
+
 	return merged, true, nil
 }
 
@@ -202,4 +202,3 @@ func (e *Engine) ResetMergeAll() {
 	e.MergeAll = false
 	e.MergeMode = ""
 }
-

@@ -39,14 +39,14 @@ func (g *ManagerGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"PrimaryKeyType":           primaryKeyType,
-		"Properties":               entity.Properties,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
-		"HasRelations":             entity.HasRelations(),
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"PrimaryKeyType":          primaryKeyType,
+		"Properties":              entity.Properties,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
+		"HasRelations":            entity.HasRelations(),
 	}
 
 	var buf bytes.Buffer
@@ -58,4 +58,3 @@ func (g *ManagerGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	managerPath := filepath.Join(paths.Domain, "Managers", entity.Name+"Manager.cs")
 	return g.writer.WriteFile(managerPath, buf.String())
 }
-

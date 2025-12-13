@@ -93,13 +93,12 @@ func (g *ValidatorGenerator) GenerateUpdateValidator(sch *schema.Schema, entity 
 // prepareValidatorData prepares common data for validator templates
 func (g *ValidatorGenerator) prepareValidatorData(sch *schema.Schema, entity *schema.Entity) map[string]interface{} {
 	return map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"Properties":               entity.Properties,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
-		"ForeignKeyProperties":     entity.GetForeignKeyProperties(),
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"Properties":              entity.Properties,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
+		"ForeignKeyProperties":    entity.GetForeignKeyProperties(),
 	}
 }
-

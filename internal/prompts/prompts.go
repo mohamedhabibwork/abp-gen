@@ -2,8 +2,8 @@ package prompts
 
 import (
 	"fmt"
-	"strconv"
 	"github.com/AlecAivazis/survey/v2"
+	"strconv"
 )
 
 // PromptText prompts for a text input
@@ -70,7 +70,7 @@ func PromptInt(message string, defaultValue int) (int, error) {
 	if err := survey.AskOne(prompt, &result); err != nil {
 		return 0, err
 	}
-	
+
 	// Parse integer
 	value, err := strconv.Atoi(result)
 	if err != nil {
@@ -78,4 +78,3 @@ func PromptInt(message string, defaultValue int) (int, error) {
 	}
 	return value, nil
 }
-

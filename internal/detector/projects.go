@@ -8,19 +8,19 @@ import (
 
 // LayerPaths contains the paths to various ABP layers
 type LayerPaths struct {
-	Domain              string
-	DomainShared        string
+	Domain               string
+	DomainShared         string
 	ApplicationContracts string
-	Application         string
-	HttpApi             string
-	EntityFrameworkCore string
-	MongoDB             string
+	Application          string
+	HttpApi              string
+	EntityFrameworkCore  string
+	MongoDB              string
 
 	// Subdirectories within layers
-	DomainEntities      string
-	DomainRepositories  string
-	DomainManagers      string
-	DomainData          string
+	DomainEntities           string
+	DomainRepositories       string
+	DomainManagers           string
+	DomainData               string
 	DomainSharedConstants    string
 	DomainSharedEvents       string
 	DomainSharedEnums        string
@@ -172,4 +172,3 @@ func (p *LayerPaths) GetPermissionProviderPath(serviceName string) string {
 	}
 	return filepath.Join(p.ContractsPermissions, serviceName+"PermissionDefinitionProvider.cs")
 }
-

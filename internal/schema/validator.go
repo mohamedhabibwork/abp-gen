@@ -99,11 +99,11 @@ func (s *Schema) validateEntity(entity *Entity, existingNames map[string]bool) e
 	}
 
 	validTypes := map[string]bool{
-		"Entity":                      true,
-		"AggregateRoot":               true,
-		"FullAuditedAggregateRoot":    true,
-		"AuditedAggregateRoot":        true,
-		"ValueObject":                 true,
+		"Entity":                   true,
+		"AggregateRoot":            true,
+		"FullAuditedAggregateRoot": true,
+		"AuditedAggregateRoot":     true,
+		"ValueObject":              true,
 	}
 	if !validTypes[entity.EntityType] {
 		return fmt.Errorf("invalid entityType '%s'", entity.EntityType)
@@ -197,4 +197,3 @@ func Pluralize(word string) string {
 	}
 	return word + "s"
 }
-

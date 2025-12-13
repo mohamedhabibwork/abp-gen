@@ -97,4 +97,3 @@ func PromptProperties() ([]schema.Property, error) {
 
 	return properties, nil
 }
-

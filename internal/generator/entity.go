@@ -50,25 +50,25 @@ func (g *EntityGenerator) Generate(sch *schema.Schema, entity *schema.Entity, pa
 // prepareEntityData prepares data for the entity template
 func (g *EntityGenerator) prepareEntityData(sch *schema.Schema, entity *schema.Entity) map[string]interface{} {
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
-	
+
 	return map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"TableName":                entity.TableName,
-		"EntityType":               entity.EntityType,
-		"PrimaryKeyType":           primaryKeyType,
-		"Properties":               entity.Properties,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
-		"ForeignKeyProperties":     entity.GetForeignKeyProperties(),
-		"HasRelations":             entity.HasRelations(),
-		"Relations":                entity.Relations,
-		"OneToManyRelations":       getOneToManyRelations(entity),
-		"ManyToManyRelations":      getManyToManyRelations(entity),
-		"HasEvents":                entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
-		"IsValueObject":            entity.EntityType == "ValueObject",
-		"IsAggregateRoot":          entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"TableName":               entity.TableName,
+		"EntityType":              entity.EntityType,
+		"PrimaryKeyType":          primaryKeyType,
+		"Properties":              entity.Properties,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
+		"ForeignKeyProperties":    entity.GetForeignKeyProperties(),
+		"HasRelations":            entity.HasRelations(),
+		"Relations":               entity.Relations,
+		"OneToManyRelations":      getOneToManyRelations(entity),
+		"ManyToManyRelations":     getManyToManyRelations(entity),
+		"HasEvents":               entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
+		"IsValueObject":           entity.EntityType == "ValueObject",
+		"IsAggregateRoot":         entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
 	}
 }
 
@@ -86,13 +86,13 @@ func (g *EntityGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 
 	// Prepare template data
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
-	
+
 	data := map[string]interface{}{
-		"SolutionName":     sch.Solution.Name,
-		"ModuleName":       sch.Solution.ModuleName,
-		"NamespaceRoot":    sch.Solution.NamespaceRoot,
-		"EntityName":       entity.Name,
-		"PrimaryKeyType":   primaryKeyType,
+		"SolutionName":   sch.Solution.Name,
+		"ModuleName":     sch.Solution.ModuleName,
+		"NamespaceRoot":  sch.Solution.NamespaceRoot,
+		"EntityName":     entity.Name,
+		"PrimaryKeyType": primaryKeyType,
 	}
 
 	// Execute template
@@ -123,11 +123,11 @@ func (g *EntityGenerator) GenerateConstants(sch *schema.Schema, entity *schema.E
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":         sch.Solution.Name,
-		"ModuleName":           sch.Solution.ModuleName,
-		"NamespaceRoot":        sch.Solution.NamespaceRoot,
-		"EntityName":           entity.Name,
-		"ValidationConstants":  validationConstants,
+		"SolutionName":        sch.Solution.Name,
+		"ModuleName":          sch.Solution.ModuleName,
+		"NamespaceRoot":       sch.Solution.NamespaceRoot,
+		"EntityName":          entity.Name,
+		"ValidationConstants": validationConstants,
 	}
 
 	// Execute template
@@ -187,12 +187,12 @@ func (g *EntityGenerator) generateETO(sch *schema.Schema, entity *schema.Entity,
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"PrimaryKeyType":  primaryKeyType,
-		"Properties":      entity.Properties,
+		"SolutionName":   sch.Solution.Name,
+		"ModuleName":     sch.Solution.ModuleName,
+		"NamespaceRoot":  sch.Solution.NamespaceRoot,
+		"EntityName":     entity.Name,
+		"PrimaryKeyType": primaryKeyType,
+		"Properties":     entity.Properties,
 	}
 
 	var buf bytes.Buffer
@@ -218,12 +218,12 @@ func (g *EntityGenerator) GenerateDataSeeder(sch *schema.Schema, entity *schema.
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"PrimaryKeyType":           primaryKeyType,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"PrimaryKeyType":          primaryKeyType,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
 	}
 
 	var buf bytes.Buffer
@@ -248,4 +248,3 @@ func getManyToManyRelations(entity *schema.Entity) []schema.ManyToManyRelation {
 	}
 	return entity.Relations.ManyToMany
 }
-

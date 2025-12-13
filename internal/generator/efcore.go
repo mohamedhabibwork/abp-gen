@@ -59,14 +59,14 @@ func (g *EFCoreGenerator) GenerateConfiguration(sch *schema.Schema, entity *sche
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":      sch.Solution.Name,
-		"ModuleName":        sch.Solution.ModuleName,
-		"NamespaceRoot":     sch.Solution.NamespaceRoot,
-		"EntityName":        entity.Name,
-		"TableName":         entity.TableName,
-		"Properties":        entity.Properties,
-		"HasRelations":      entity.HasRelations(),
-		"OneToManyRelations": getOneToManyRelations(entity),
+		"SolutionName":        sch.Solution.Name,
+		"ModuleName":          sch.Solution.ModuleName,
+		"NamespaceRoot":       sch.Solution.NamespaceRoot,
+		"EntityName":          entity.Name,
+		"TableName":           entity.TableName,
+		"Properties":          entity.Properties,
+		"HasRelations":        entity.HasRelations(),
+		"OneToManyRelations":  getOneToManyRelations(entity),
 		"ManyToManyRelations": getManyToManyRelations(entity),
 	}
 
@@ -168,4 +168,3 @@ func (g *EFCoreGenerator) UpdateModelCreating(sch *schema.Schema, entity *schema
 		return updated, nil
 	})
 }
-

@@ -68,11 +68,11 @@ func (g *MongoDBGenerator) GenerateConfiguration(sch *schema.Schema, entity *sch
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"TableName":      entity.TableName,
+		"SolutionName":  sch.Solution.Name,
+		"ModuleName":    sch.Solution.ModuleName,
+		"NamespaceRoot": sch.Solution.NamespaceRoot,
+		"EntityName":    entity.Name,
+		"TableName":     entity.TableName,
 	}
 
 	var buf bytes.Buffer
@@ -85,4 +85,3 @@ func (g *MongoDBGenerator) GenerateConfiguration(sch *schema.Schema, entity *sch
 	configPath := filepath.Join(paths.MongoDB, "MongoDB", entity.Name+"MongoDbConfiguration.cs")
 	return g.writer.WriteFile(configPath, buf.String())
 }
-

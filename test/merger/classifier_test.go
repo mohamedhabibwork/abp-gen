@@ -120,4 +120,3 @@ func TestClassifier_GetMergeStrategy(t *testing.T) {
 		})
 	}
 }
-

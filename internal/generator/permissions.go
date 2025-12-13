@@ -142,7 +142,7 @@ func (g *PermissionsGenerator) updateLocalizationFile(sch *schema.Schema, entity
 
 	// The localization file updates would require proper JSON parsing
 	// which we'll handle in the template or with a JSON library
-	
+
 	// Placeholder for now - in full implementation, would:
 	// 1. Read existing JSON
 	// 2. Add new keys if not present
@@ -151,4 +151,3 @@ func (g *PermissionsGenerator) updateLocalizationFile(sch *schema.Schema, entity
 
 	return nil
 }
-

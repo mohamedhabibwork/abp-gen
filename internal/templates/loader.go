@@ -148,4 +148,3 @@ func (l *Loader) ListAvailableTemplates() ([]string, error) {
 
 	return templates, err
 }
-

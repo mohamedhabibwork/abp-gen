@@ -105,17 +105,17 @@ func (g *DTOGenerator) GenerateEntityDto(sch *schema.Schema, entity *schema.Enti
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"PrimaryKeyType":           primaryKeyType,
-		"Properties":               entity.Properties,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
-		"ForeignKeyProperties":     entity.GetForeignKeyProperties(),
-		"HasRelations":             entity.HasRelations(),
-		"OneToManyRelations":       getOneToManyRelations(entity),
-		"ManyToManyRelations":      getManyToManyRelations(entity),
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"PrimaryKeyType":          primaryKeyType,
+		"Properties":              entity.Properties,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
+		"ForeignKeyProperties":    entity.GetForeignKeyProperties(),
+		"HasRelations":            entity.HasRelations(),
+		"OneToManyRelations":      getOneToManyRelations(entity),
+		"ManyToManyRelations":     getManyToManyRelations(entity),
 	}
 
 	var buf bytes.Buffer
@@ -131,13 +131,13 @@ func (g *DTOGenerator) GenerateEntityDto(sch *schema.Schema, entity *schema.Enti
 // prepareDtoData prepares common data for DTO templates
 func (g *DTOGenerator) prepareDtoData(sch *schema.Schema, entity *schema.Entity) map[string]interface{} {
 	return map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"Properties":               entity.Properties,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
-		"ForeignKeyProperties":     entity.GetForeignKeyProperties(),
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"Properties":              entity.Properties,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
+		"ForeignKeyProperties":    entity.GetForeignKeyProperties(),
 	}
 }
 
@@ -170,4 +170,3 @@ func (g *DTOGenerator) GenerateAppServiceInterface(sch *schema.Schema, entity *s
 	filePath := filepath.Join(paths.ContractsServices, "I"+entity.Name+"AppService.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
-

@@ -161,4 +161,3 @@ func (h *RelationshipHandler) ValidateRelationships(sch *schema.Schema) error {
 
 	return nil
 }
-

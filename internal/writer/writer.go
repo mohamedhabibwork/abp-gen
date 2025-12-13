@@ -86,7 +86,7 @@ func (w *Writer) WriteFile(path string, content string) error {
 		if err != nil {
 			return fmt.Errorf("merge failed for %s: %w", path, err)
 		}
-		
+
 		if !shouldWrite {
 			// User chose to skip
 			w.Operations = append(w.Operations, FileOperation{
@@ -98,7 +98,7 @@ func (w *Writer) WriteFile(path string, content string) error {
 			w.logOperation(OperationSkip, path)
 			return nil
 		}
-		
+
 		// Use merged content
 		content = mergedContent
 	}
@@ -275,4 +275,3 @@ func ReadFile(path string) (string, error) {
 	}
 	return string(content), nil
 }
-

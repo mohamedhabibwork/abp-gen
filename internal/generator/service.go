@@ -39,20 +39,20 @@ func (g *ServiceGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":             sch.Solution.Name,
-		"ModuleName":               sch.Solution.ModuleName,
-		"NamespaceRoot":            sch.Solution.NamespaceRoot,
-		"EntityName":               entity.Name,
-		"PrimaryKeyType":           primaryKeyType,
-		"EntityType":               entity.EntityType,
-		"Properties":               entity.Properties,
-		"NonForeignKeyProperties":  entity.GetNonForeignKeyProperties(),
-		"ForeignKeyProperties":     entity.GetForeignKeyProperties(),
-		"HasRelations":             entity.HasRelations(),
-		"OneToManyRelations":       getOneToManyRelations(entity),
-		"ManyToManyRelations":      getManyToManyRelations(entity),
-		"IsAggregateRoot":          entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
-		"HasEvents":                entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
+		"SolutionName":            sch.Solution.Name,
+		"ModuleName":              sch.Solution.ModuleName,
+		"NamespaceRoot":           sch.Solution.NamespaceRoot,
+		"EntityName":              entity.Name,
+		"PrimaryKeyType":          primaryKeyType,
+		"EntityType":              entity.EntityType,
+		"Properties":              entity.Properties,
+		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
+		"ForeignKeyProperties":    entity.GetForeignKeyProperties(),
+		"HasRelations":            entity.HasRelations(),
+		"OneToManyRelations":      getOneToManyRelations(entity),
+		"ManyToManyRelations":     getManyToManyRelations(entity),
+		"IsAggregateRoot":         entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
+		"HasEvents":               entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
 	}
 
 	var buf bytes.Buffer
@@ -72,12 +72,12 @@ func (g *ServiceGenerator) GenerateAutoMapperProfile(sch *schema.Schema, entity 
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"IsValueObject":  entity.EntityType == "ValueObject",
-		"HasEvents":      entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
+		"SolutionName":  sch.Solution.Name,
+		"ModuleName":    sch.Solution.ModuleName,
+		"NamespaceRoot": sch.Solution.NamespaceRoot,
+		"EntityName":    entity.Name,
+		"IsValueObject": entity.EntityType == "ValueObject",
+		"HasEvents":     entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
 	}
 
 	var buf bytes.Buffer
@@ -103,12 +103,12 @@ func (g *ServiceGenerator) GenerateController(sch *schema.Schema, entity *schema
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
+		"SolutionName":     sch.Solution.Name,
+		"ModuleName":       sch.Solution.ModuleName,
+		"NamespaceRoot":    sch.Solution.NamespaceRoot,
+		"EntityName":       entity.Name,
 		"EntityNamePlural": templates.Pluralize(entity.Name),
-		"PrimaryKeyType": primaryKeyType,
+		"PrimaryKeyType":   primaryKeyType,
 	}
 
 	var buf bytes.Buffer
@@ -119,4 +119,3 @@ func (g *ServiceGenerator) GenerateController(sch *schema.Schema, entity *schema
 	filePath := filepath.Join(paths.HttpApiControllers, entity.Name+"Controller.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
-

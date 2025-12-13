@@ -154,4 +154,3 @@ func PromptManyToManyRelation() (*schema.ManyToManyRelation, error) {
 		NavigationProperty: navigationProperty,
 	}, nil
 }
-

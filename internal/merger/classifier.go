@@ -206,4 +206,3 @@ func (c *Classifier) IsMergeable(fileType FileType) bool {
 	strategy := c.GetMergeStrategy(fileType)
 	return strategy != MergeStrategyNone
 }
-

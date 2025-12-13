@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 )
 
-
 // FileExistence represents file existence status
 type FileExistence struct {
 	Path     string
@@ -110,4 +109,3 @@ func (d *Detector) ShouldPromptUser(path string, force bool, mergeAll bool) (boo
 
 	return d.CanMerge(fileExists.FileType), nil
 }
-

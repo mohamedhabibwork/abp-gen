@@ -22,4 +22,3 @@ const (
 	ResolutionSkip         = prompts.ResolutionSkip
 	ResolutionShowContext  = prompts.ResolutionShowContext
 )
-

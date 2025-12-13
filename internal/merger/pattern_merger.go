@@ -36,37 +36,37 @@ func (m *PatternMerger) Merge(existing string, newContent string, fileType FileT
 func (m *PatternMerger) mergePermissions(existing string, newContent string) (string, []Conflict, error) {
 	// Extract new permission classes
 	newClasses := m.extractPermissionClasses(newContent)
-	
+
 	// Check for existing classes
 	var conflicts []Conflict
 	var toAdd []string
-	
+
 	for _, newClass := range newClasses {
 		className := m.extractClassName(newClass)
 		if className == "" {
 			continue
 		}
-		
+
 		// Check if class already exists
 		if m.containsClass(existing, className) {
 			conflicts = append(conflicts, Conflict{
-				Type:        ConflictTypeDuplicateClass,
-				Description: fmt.Sprintf("Class '%s' already exists", className),
+				Type:         ConflictTypeDuplicateClass,
+				Description:  fmt.Sprintf("Class '%s' already exists", className),
 				ExistingCode: m.extractExistingClass(existing, className),
-				NewCode:     newClass,
-				Line:        m.findClassLine(existing, className),
+				NewCode:      newClass,
+				Line:         m.findClassLine(existing, className),
 			})
 		} else {
 			toAdd = append(toAdd, newClass)
 		}
 	}
-	
+
 	// If no conflicts, append new classes before closing namespace
 	if len(conflicts) == 0 && len(toAdd) > 0 {
 		merged := m.insertBeforeClosingBrace(existing, strings.Join(toAdd, "\n\n"))
 		return merged, nil, nil
 	}
-	
+
 	return existing, conflicts, nil
 }
 
@@ -75,30 +75,30 @@ func (m *PatternMerger) mergePermissionProvider(existing string, newContent stri
 	// Extract the Define method calls from new content
 	definePattern := regexp.MustCompile(`context\.AddPermission\([^)]+\);`)
 	newDefines := definePattern.FindAllString(newContent, -1)
-	
+
 	var conflicts []Conflict
 	var toAdd []string
-	
+
 	for _, define := range newDefines {
 		// Check if this permission definition already exists
 		if strings.Contains(existing, define) {
 			conflicts = append(conflicts, Conflict{
-				Type:        ConflictTypeDuplicateMethod,
-				Description: "Permission definition already exists",
+				Type:         ConflictTypeDuplicateMethod,
+				Description:  "Permission definition already exists",
 				ExistingCode: define,
-				NewCode:     define,
+				NewCode:      define,
 			})
 		} else {
-			toAdd = append(toAdd, "            " + define)
+			toAdd = append(toAdd, "            "+define)
 		}
 	}
-	
+
 	// Insert new definitions at the end of Define method
 	if len(conflicts) == 0 && len(toAdd) > 0 {
 		merged := m.insertIntoDefineMethod(existing, strings.Join(toAdd, "\n"))
 		return merged, nil, nil
 	}
-	
+
 	return existing, conflicts, nil
 }
 
@@ -107,10 +107,10 @@ func (m *PatternMerger) mergeDbContext(existing string, newContent string) (stri
 	// Extract DbSet properties from new content
 	dbSetPattern := regexp.MustCompile(`public\s+DbSet<(\w+)>\s+(\w+)\s*\{\s*get;\s*set;\s*\}`)
 	newDbSets := dbSetPattern.FindAllString(newContent, -1)
-	
+
 	var conflicts []Conflict
 	var toAdd []string
-	
+
 	for _, dbSet := range newDbSets {
 		// Extract entity name
 		matches := dbSetPattern.FindStringSubmatch(dbSet)
@@ -118,36 +118,36 @@ func (m *PatternMerger) mergeDbContext(existing string, newContent string) (stri
 			continue
 		}
 		propertyName := matches[2]
-		
+
 		// Check if DbSet already exists
 		if strings.Contains(existing, fmt.Sprintf("%s {", propertyName)) {
 			conflicts = append(conflicts, Conflict{
-				Type:        ConflictTypeDuplicateProperty,
-				Description: fmt.Sprintf("DbSet property '%s' already exists", propertyName),
+				Type:         ConflictTypeDuplicateProperty,
+				Description:  fmt.Sprintf("DbSet property '%s' already exists", propertyName),
 				ExistingCode: m.extractExistingDbSet(existing, propertyName),
-				NewCode:     dbSet,
+				NewCode:      dbSet,
 			})
 		} else {
-			toAdd = append(toAdd, "    " + dbSet)
+			toAdd = append(toAdd, "    "+dbSet)
 		}
 	}
-	
+
 	// Extract OnModelCreating configuration lines
 	onModelCreatingPattern := regexp.MustCompile(`builder\.Entity<(\w+)>\([^)]+\);`)
 	newConfigurations := onModelCreatingPattern.FindAllString(newContent, -1)
-	
+
 	for _, config := range newConfigurations {
 		if !strings.Contains(existing, config) {
 			toAdd = append(toAdd, "            "+config)
 		}
 	}
-	
+
 	// Insert new DbSets before closing class brace
 	if len(conflicts) == 0 && len(toAdd) > 0 {
 		merged := m.insertDbSets(existing, toAdd)
 		return merged, nil, nil
 	}
-	
+
 	return existing, conflicts, nil
 }
 
@@ -199,18 +199,18 @@ func (m *PatternMerger) insertBeforeClosingBrace(content string, toInsert string
 	// Find the last closing brace of namespace
 	lines := strings.Split(content, "\n")
 	insertIndex := -1
-	
+
 	for i := len(lines) - 1; i >= 0; i-- {
 		if strings.TrimSpace(lines[i]) == "}" {
 			insertIndex = i
 			break
 		}
 	}
-	
+
 	if insertIndex == -1 {
 		return content + "\n" + toInsert
 	}
-	
+
 	// Insert before the closing brace
 	result := strings.Join(lines[:insertIndex], "\n") + "\n\n" + toInsert + "\n" + strings.Join(lines[insertIndex:], "\n")
 	return result
@@ -226,7 +226,7 @@ func (m *PatternMerger) insertDbSets(content string, toAdd []string) string {
 	// Find a good insertion point for DbSets (after existing DbSets or before OnModelCreating)
 	lines := strings.Split(content, "\n")
 	insertIndex := -1
-	
+
 	// Find last DbSet property
 	for i := len(lines) - 1; i >= 0; i-- {
 		if strings.Contains(lines[i], "DbSet<") && strings.Contains(lines[i], "{ get; set; }") {
@@ -234,7 +234,7 @@ func (m *PatternMerger) insertDbSets(content string, toAdd []string) string {
 			break
 		}
 	}
-	
+
 	// If no DbSet found, find OnModelCreating method
 	if insertIndex == -1 {
 		for i, line := range lines {
@@ -244,17 +244,16 @@ func (m *PatternMerger) insertDbSets(content string, toAdd []string) string {
 			}
 		}
 	}
-	
+
 	if insertIndex == -1 {
 		return content
 	}
-	
+
 	// Insert DbSets
 	newLines := make([]string, 0, len(lines)+len(toAdd))
 	newLines = append(newLines, lines[:insertIndex]...)
 	newLines = append(newLines, toAdd...)
 	newLines = append(newLines, lines[insertIndex:]...)
-	
+
 	return strings.Join(newLines, "\n")
 }
-

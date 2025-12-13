@@ -22,36 +22,36 @@ func (r *ConflictResolver) ResolveConflicts(existing string, conflicts []Conflic
 	if len(conflicts) == 0 {
 		return existing, nil
 	}
-	
+
 	result := existing
-	
+
 	for i, conflict := range conflicts {
 		resolution, ok := resolutions[i]
 		if !ok {
 			// Default to keeping existing
 			resolution = ResolutionKeepExisting
 		}
-		
+
 		switch resolution {
 		case ResolutionKeepExisting:
 			// Do nothing, keep existing
 			continue
-			
+
 		case ResolutionUseNew:
 			// Replace existing with new
 			result = r.replaceCode(result, conflict.ExistingCode, conflict.NewCode)
-			
+
 		case ResolutionKeepBoth:
 			// Keep both, rename new one
 			newCodeRenamed := r.renameConflictingItem(conflict.NewCode, conflict.Type)
 			result = r.insertAfter(result, conflict.ExistingCode, newCodeRenamed)
-			
+
 		case ResolutionSkip:
 			// Skip this conflict
 			continue
 		}
 	}
-	
+
 	return result, nil
 }
 
@@ -66,7 +66,7 @@ func (r *ConflictResolver) insertAfter(content string, existingCode string, newC
 	if index == -1 {
 		return content
 	}
-	
+
 	endIndex := index + len(existingCode)
 	return content[:endIndex] + "\n\n" + newCode + content[endIndex:]
 }
@@ -161,19 +161,19 @@ func (r *ConflictResolver) renameClass(code string) string {
 // FormatConflict formats a conflict for display to the user
 func (r *ConflictResolver) FormatConflict(conflict Conflict, index int) string {
 	var builder strings.Builder
-	
+
 	builder.WriteString(fmt.Sprintf("\n⚠️  Conflict %d: %s\n", index+1, conflict.Description))
-	
+
 	if conflict.Line > 0 {
 		builder.WriteString(fmt.Sprintf("Line: %d\n", conflict.Line))
 	}
-	
+
 	builder.WriteString("\nExisting code:\n")
 	builder.WriteString("  " + strings.ReplaceAll(conflict.ExistingCode, "\n", "\n  "))
 	builder.WriteString("\n\nNew code:\n")
 	builder.WriteString("  " + strings.ReplaceAll(conflict.NewCode, "\n", "\n  "))
 	builder.WriteString("\n")
-	
+
 	return builder.String()
 }
 
@@ -194,4 +194,3 @@ func (r *ConflictResolver) GetConflictTypeName(conflictType ConflictType) string
 		return "Unknown"
 	}
 }
-

@@ -16,22 +16,22 @@ func init() {
 // GetTemplateFuncs returns all custom template functions
 func GetTemplateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"pluralize":   Pluralize,
-		"camelCase":   CamelCase,
-		"pascalCase":  PascalCase,
-		"lowerFirst":  LowerFirst,
-		"upperFirst":  UpperFirst,
-		"csType":      CSType,
-		"nullable":    Nullable,
-		"attribute":   Attribute,
-		"contains":    strings.Contains,
-		"hasPrefix":   strings.HasPrefix,
-		"hasSuffix":   strings.HasSuffix,
-		"trimSuffix":  strings.TrimSuffix,
-		"trimPrefix":  strings.TrimPrefix,
-		"toLower":     strings.ToLower,
-		"toUpper":     strings.ToUpper,
-		"join":        strings.Join,
+		"pluralize":  Pluralize,
+		"camelCase":  CamelCase,
+		"pascalCase": PascalCase,
+		"lowerFirst": LowerFirst,
+		"upperFirst": UpperFirst,
+		"csType":     CSType,
+		"nullable":   Nullable,
+		"attribute":  Attribute,
+		"contains":   strings.Contains,
+		"hasPrefix":  strings.HasPrefix,
+		"hasSuffix":  strings.HasSuffix,
+		"trimSuffix": strings.TrimSuffix,
+		"trimPrefix": strings.TrimPrefix,
+		"toLower":    strings.ToLower,
+		"toUpper":    strings.ToUpper,
+		"join":       strings.Join,
 	}
 }
 
@@ -147,4 +147,3 @@ func Attribute(attrType string, value interface{}) string {
 		return "[" + attrType + "]"
 	}
 }
-

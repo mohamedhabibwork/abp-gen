@@ -40,4 +40,3 @@ func TestPatternMerger_MergePermissions(t *testing.T) {
 		t.Error("Merged content is empty")
 	}
 }
-

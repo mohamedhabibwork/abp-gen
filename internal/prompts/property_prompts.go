@@ -98,4 +98,3 @@ func PromptProperty() (*schema.Property, error) {
 
 	return property, nil
 }
-

@@ -7,9 +7,9 @@ import (
 
 // Schema represents the complete ABP code generation schema
 type Schema struct {
-	Solution Solution  `json:"solution"`
-	Entities []Entity  `json:"entities"`
-	Options  Options   `json:"options"`
+	Solution Solution `json:"solution"`
+	Entities []Entity `json:"entities"`
+	Options  Options  `json:"options"`
 }
 
 // Solution represents solution-level configuration
@@ -18,19 +18,19 @@ type Solution struct {
 	ModuleName          string `json:"moduleName"`
 	NamespaceRoot       string `json:"namespaceRoot"`
 	ABPVersion          string `json:"abpVersion"`
-	PrimaryKeyType      string `json:"primaryKeyType"`      // "Guid" or "long" or "configurable"
-	DBProvider          string `json:"dbProvider"`          // "efcore" or "mongodb" or "both"
+	PrimaryKeyType      string `json:"primaryKeyType"` // "Guid" or "long" or "configurable"
+	DBProvider          string `json:"dbProvider"`     // "efcore" or "mongodb" or "both"
 	GenerateControllers bool   `json:"generateControllers"`
 }
 
 // Entity represents a domain entity
 type Entity struct {
-	Name           string      `json:"name"`
-	TableName      string      `json:"tableName"`
-	EntityType     string      `json:"entityType"` // "Entity", "AggregateRoot", "FullAuditedAggregateRoot", "ValueObject"
-	PrimaryKeyType string      `json:"primaryKeyType,omitempty"`
-	Properties     []Property  `json:"properties"`
-	Relations      *Relations  `json:"relations,omitempty"`
+	Name           string     `json:"name"`
+	TableName      string     `json:"tableName"`
+	EntityType     string     `json:"entityType"` // "Entity", "AggregateRoot", "FullAuditedAggregateRoot", "ValueObject"
+	PrimaryKeyType string     `json:"primaryKeyType,omitempty"`
+	Properties     []Property `json:"properties"`
+	Relations      *Relations `json:"relations,omitempty"`
 }
 
 // Property represents an entity property
@@ -137,4 +137,3 @@ func (e *Entity) GetForeignKeyProperties() []Property {
 func (e *Entity) HasRelations() bool {
 	return e.Relations != nil && (len(e.Relations.OneToMany) > 0 || len(e.Relations.ManyToMany) > 0)
 }
-

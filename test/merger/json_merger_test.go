@@ -40,4 +40,3 @@ func TestJSONMerger_Merge(t *testing.T) {
 		t.Errorf("Expected 4 keys in merged JSON, got %d", len(mergedData))
 	}
 }
-
