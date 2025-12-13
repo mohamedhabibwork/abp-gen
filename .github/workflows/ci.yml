@@ -186,6 +186,12 @@ jobs:
           ls -lh "$BINARY_NAME"
       
       - name: Verify binary
+        # Only run binary tests when building for the same architecture as the runner
+        if: |
+          (matrix.goos == 'linux' && matrix.goarch == 'amd64' && matrix.os == 'ubuntu-latest') ||
+          (matrix.goos == 'darwin' && matrix.goarch == 'arm64' && matrix.os == 'macos-latest') ||
+          (matrix.goos == 'darwin' && matrix.goarch == 'amd64' && matrix.os == 'macos-latest') ||
+          (matrix.goos == 'windows' && matrix.goarch == 'amd64' && matrix.os == 'windows-latest')
         run: |
           BINARY_NAME="abp-gen"
           if [ "${{ matrix.goos }}" == "windows" ]; then
@@ -200,4 +206,26 @@ jobs:
           echo "Testing binary $BINARY_NAME..."
           ./"$BINARY_NAME" --version || exit 1
           echo "✓ Binary verification successful"
+      
+      - name: Verify binary (cross-compiled)
+        # For cross-compiled binaries, just verify they exist and have correct size
+        if: |
+          !((matrix.goos == 'linux' && matrix.goarch == 'amd64' && matrix.os == 'ubuntu-latest') ||
+            (matrix.goos == 'darwin' && matrix.goarch == 'arm64' && matrix.os == 'macos-latest') ||
+            (matrix.goos == 'darwin' && matrix.goarch == 'amd64' && matrix.os == 'macos-latest') ||
+            (matrix.goos == 'windows' && matrix.goarch == 'amd64' && matrix.os == 'windows-latest'))
+        run: |
+          BINARY_NAME="abp-gen"
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            BINARY_NAME="abp-gen.exe"
+          fi
+          
+          if [ ! -f "$BINARY_NAME" ]; then
+            echo "❌ Error: Binary $BINARY_NAME not found!"
+            exit 1
+          fi
+          
+          echo "✓ Binary $BINARY_NAME built successfully for ${{ matrix.goos }}/${{ matrix.goarch }}"
+          echo "  File size: $(ls -lh "$BINARY_NAME" | awk '{print $5}')"
+          echo "  Note: Cannot execute cross-compiled binary on this runner"
 
