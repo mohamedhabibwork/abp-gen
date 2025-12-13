@@ -564,6 +564,33 @@ abp-gen init
 
 The generator is idempotent - it will skip existing permissions. Use `--force` to overwrite all files.
 
+### GitHub Actions Build Failures
+
+If you see errors like "directory cmd/abp-gen was not found" in GitHub Actions:
+
+1. **Ensure all files are committed and pushed:**
+   ```bash
+   git add .
+   git commit -m "Your commit message"
+   git push origin main
+   ```
+
+2. **Verify the repository structure:**
+   ```bash
+   ls -la cmd/abp-gen/
+   # Should show main.go
+   ```
+
+3. **Check that workflows are in the correct location:**
+   ```bash
+   ls -la .github/workflows/
+   # Should show ci.yml, build.yml, release.yml, etc.
+   ```
+
+4. **If the repository is empty on GitHub:**
+   - Make sure you've pushed all files, not just the workflows
+   - The workflows will fail if they run before the code is pushed
+
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

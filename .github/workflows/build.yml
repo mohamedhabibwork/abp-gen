@@ -44,6 +44,22 @@ jobs:
           go-version: '1.22'
           cache-dependency-path: go.sum
       
+      - name: Verify project structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo ""
+          echo "Checking for cmd/abp-gen:"
+          if [ ! -d "cmd/abp-gen" ]; then
+            echo "❌ Error: cmd/abp-gen directory not found!"
+            echo "Available directories:"
+            find . -type d -maxdepth 2 | head -20
+            exit 1
+          fi
+          echo "✓ cmd/abp-gen directory found"
+          ls -la cmd/abp-gen/
+      
       - name: Build
         env:
           GOOS: ${{ matrix.goos }}

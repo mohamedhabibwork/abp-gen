@@ -1,0 +1,66 @@
+name: Verify Repository Structure
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Verify required directories
+        run: |
+          echo "Verifying repository structure..."
+          echo ""
+          
+          MISSING=0
+          
+          # Check for cmd/abp-gen
+          if [ ! -d "cmd/abp-gen" ]; then
+            echo "❌ cmd/abp-gen directory not found"
+            MISSING=1
+          else
+            echo "✓ cmd/abp-gen directory exists"
+            if [ ! -f "cmd/abp-gen/main.go" ]; then
+              echo "❌ cmd/abp-gen/main.go not found"
+              MISSING=1
+            else
+              echo "✓ cmd/abp-gen/main.go exists"
+            fi
+          fi
+          
+          # Check for go.mod
+          if [ ! -f "go.mod" ]; then
+            echo "❌ go.mod not found"
+            MISSING=1
+          else
+            echo "✓ go.mod exists"
+          fi
+          
+          # Check for internal directory
+          if [ ! -d "internal" ]; then
+            echo "❌ internal directory not found"
+            MISSING=1
+          else
+            echo "✓ internal directory exists"
+          fi
+          
+          echo ""
+          if [ $MISSING -eq 1 ]; then
+            echo "❌ Repository structure verification failed!"
+            echo ""
+            echo "Current directory structure:"
+            find . -type f -name "*.go" | head -20
+            exit 1
+          else
+            echo "✓ All required directories and files found"
+          fi
+

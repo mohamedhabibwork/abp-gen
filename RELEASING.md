@@ -89,7 +89,7 @@ go install github.com/goreleaser/goreleaser@latest
 goreleaser release --snapshot
 
 # Create actual release
-GITHUB_TOKEN=your_token goreleaser release
+GITHB_TOKEN=your_token goreleaser release
 ```
 
 ## Release Notes
@@ -150,7 +150,7 @@ GOOS=darwin GOARCH=arm64 go build ./cmd/abp-gen
 ### Release Workflow Fails
 
 - Check GitHub Actions logs
-- Verify GITHUB_TOKEN has proper permissions
+- Verify GITHB_TOKEN has proper permissions
 - Ensure tag format is correct (`v*`)
 - Check GoReleaser configuration
 
