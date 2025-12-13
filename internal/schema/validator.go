@@ -137,16 +137,8 @@ func (s *Schema) validateProperty(prop *Property, existingNames map[string]bool)
 		return fmt.Errorf("property type is required")
 	}
 
-	validTypes := map[string]bool{
-		"string": true, "int": true, "long": true, "decimal": true,
-		"DateTime": true, "bool": true, "Guid": true, "byte": true,
-		"short": true, "float": true, "double": true,
-	}
-
 	// Allow custom types (might be enums or other entities)
-	if !validTypes[prop.Type] && !strings.Contains(prop.Type, ".") {
-		// Could be a custom type, we'll allow it but add a warning in verbose mode
-	}
+	// Types are validated at compile time, so we accept any type string here
 
 	if prop.IsForeignKey && prop.TargetEntity == "" {
 		return fmt.Errorf("foreign key property must specify targetEntity")
