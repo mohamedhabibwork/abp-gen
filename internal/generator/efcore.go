@@ -80,7 +80,8 @@ func (g *EFCoreGenerator) GenerateConfiguration(sch *schema.Schema, entity *sche
 		return fmt.Errorf("failed to execute EF Core config template: %w", err)
 	}
 
-	filePath := filepath.Join(paths.EFCoreConfigurations, entity.Name+"Configuration.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	filePath := filepath.Join(paths.EFCoreConfigurations, moduleFolder, entity.Name+"Configuration.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
 
@@ -106,7 +107,8 @@ func (g *EFCoreGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 		return fmt.Errorf("failed to execute EF Core repository template: %w", err)
 	}
 
-	filePath := filepath.Join(paths.EFCoreRepositories, "EfCore"+entity.Name+"Repository.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	filePath := filepath.Join(paths.EFCoreRepositories, moduleFolder, "EfCore"+entity.Name+"Repository.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
 
@@ -124,13 +126,14 @@ func (g *EFCoreGenerator) UpdateDbContext(sch *schema.Schema, entity *schema.Ent
 	createInitialContent := func() (string, error) {
 		namespaceRoot := sch.Solution.NamespaceRoot
 		moduleName := sch.Solution.ModuleName
-		
+
 		// Build initial DbContext file structure
+		moduleNamespace := moduleName + "Module"
 		content := fmt.Sprintf(`using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using %s.EntityFrameworkCore.Configurations.%s;
-
+using %s.Domain.Entities.%sModule;
 namespace %s.EntityFrameworkCore
 {
     [ConnectionStringName("%s")]
@@ -155,7 +158,7 @@ namespace %s.EntityFrameworkCore
         }
     }
 }
-`, namespaceRoot, moduleName, namespaceRoot, moduleName, moduleName, moduleName, dbSetProperty, moduleName, moduleName, entity.Name)
+`, namespaceRoot, moduleNamespace, namespaceRoot, moduleName, namespaceRoot, moduleName, moduleName, moduleName, dbSetProperty, moduleName, moduleName, entity.Name)
 		return content, nil
 	}
 
@@ -185,9 +188,11 @@ func (g *EFCoreGenerator) UpdateIDbContext(sch *schema.Schema, entity *schema.En
 	createInitialContent := func() (string, error) {
 		namespaceRoot := sch.Solution.NamespaceRoot
 		moduleName := sch.Solution.ModuleName
-		
+
 		// Build initial IDbContext file structure
 		content := fmt.Sprintf(`using Microsoft.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore;
+using %s.Domain.Entities.%sModule;
 
 namespace %s.EntityFrameworkCore
 {
@@ -198,7 +203,7 @@ namespace %s.EntityFrameworkCore
          */
 %s    }
 }
-`, namespaceRoot, moduleName, dbSetProperty)
+`, namespaceRoot, moduleName, namespaceRoot, moduleName, dbSetProperty)
 		return content, nil
 	}
 

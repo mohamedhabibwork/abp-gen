@@ -1,9 +1,9 @@
 using FluentValidation;
-using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
-using {{.NamespaceRoot}}.Constants.{{.ModuleName}};
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module;
+using {{.NamespaceRoot}}.Constants.{{.ModuleName}}Module;
 using Volo.Abp.Validation;
 
-namespace {{.NamespaceRoot}}.Application.Validators.{{.ModuleName}}
+namespace {{.NamespaceRoot}}.Application.Validators.{{.ModuleName}}Module
 {
     public class Update{{.EntityName}}DtoValidator : AbstractValidator<Update{{.EntityName}}Dto>
     {

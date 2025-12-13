@@ -43,7 +43,8 @@ func (g *EntityGenerator) Generate(sch *schema.Schema, entity *schema.Entity, pa
 	}
 
 	// Write file
-	entityPath := filepath.Join(paths.DomainEntities, entity.Name+".cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	entityPath := filepath.Join(paths.DomainEntities, moduleFolder, entity.Name+".cs")
 	return g.writer.WriteFile(entityPath, buf.String())
 }
 
@@ -102,7 +103,8 @@ func (g *EntityGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 	}
 
 	// Write file
-	repoPath := filepath.Join(paths.DomainRepositories, "I"+entity.Name+"Repository.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	repoPath := filepath.Join(paths.DomainRepositories, moduleFolder, "I"+entity.Name+"Repository.cs")
 	return g.writer.WriteFile(repoPath, buf.String())
 }
 
@@ -137,7 +139,8 @@ func (g *EntityGenerator) GenerateConstants(sch *schema.Schema, entity *schema.E
 	}
 
 	// Write file
-	constantsPath := filepath.Join(paths.DomainSharedConstants, entity.Name+"Constants.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	constantsPath := filepath.Join(paths.DomainSharedConstants, moduleFolder, entity.Name+"Constants.cs")
 	return g.writer.WriteFile(constantsPath, buf.String())
 }
 
@@ -174,7 +177,8 @@ func (g *EntityGenerator) generateEventTypes(sch *schema.Schema, entity *schema.
 		return fmt.Errorf("failed to execute event types template: %w", err)
 	}
 
-	eventTypesPath := filepath.Join(paths.DomainSharedEvents, entity.Name+"EtoTypes.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	eventTypesPath := filepath.Join(paths.DomainSharedEvents, moduleFolder, entity.Name+"EtoTypes.cs")
 	return g.writer.WriteFile(eventTypesPath, buf.String())
 }
 
@@ -200,7 +204,8 @@ func (g *EntityGenerator) generateETO(sch *schema.Schema, entity *schema.Entity,
 		return fmt.Errorf("failed to execute ETO template: %w", err)
 	}
 
-	etoPath := filepath.Join(paths.DomainSharedEvents, entity.Name+"Eto.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	etoPath := filepath.Join(paths.DomainSharedEvents, moduleFolder, entity.Name+"Eto.cs")
 	return g.writer.WriteFile(etoPath, buf.String())
 }
 
@@ -231,7 +236,8 @@ func (g *EntityGenerator) GenerateDataSeeder(sch *schema.Schema, entity *schema.
 		return fmt.Errorf("failed to execute seeder template: %w", err)
 	}
 
-	seederPath := filepath.Join(paths.DomainData, entity.Name+"DataSeeder.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	seederPath := filepath.Join(paths.DomainData, moduleFolder, entity.Name+"DataSeeder.cs")
 	return g.writer.WriteFile(seederPath, buf.String())
 }
 

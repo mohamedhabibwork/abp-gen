@@ -60,7 +60,8 @@ func (g *ServiceGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 		return fmt.Errorf("failed to execute app service template: %w", err)
 	}
 
-	filePath := filepath.Join(paths.ApplicationServices, entity.Name+"AppService.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	filePath := filepath.Join(paths.ApplicationServices, moduleFolder, entity.Name+"AppService.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
 
@@ -85,7 +86,8 @@ func (g *ServiceGenerator) GenerateAutoMapperProfile(sch *schema.Schema, entity 
 		return fmt.Errorf("failed to execute mapper profile template: %w", err)
 	}
 
-	filePath := filepath.Join(paths.ApplicationAutoMapper, entity.Name+"Profile.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	filePath := filepath.Join(paths.ApplicationAutoMapper, moduleFolder, entity.Name+"Profile.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
 
@@ -116,6 +118,7 @@ func (g *ServiceGenerator) GenerateController(sch *schema.Schema, entity *schema
 		return fmt.Errorf("failed to execute controller template: %w", err)
 	}
 
-	filePath := filepath.Join(paths.HttpApiControllers, entity.Name+"Controller.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	filePath := filepath.Join(paths.HttpApiControllers, moduleFolder, entity.Name+"Controller.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }

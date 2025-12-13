@@ -55,6 +55,7 @@ func (g *ManagerGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	}
 
 	// Managers are typically in Domain/Managers directory
-	managerPath := filepath.Join(paths.Domain, "Managers", entity.Name+"Manager.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	managerPath := filepath.Join(paths.Domain, "Managers", moduleFolder, entity.Name+"Manager.cs")
 	return g.writer.WriteFile(managerPath, buf.String())
 }

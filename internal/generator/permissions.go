@@ -71,6 +71,7 @@ func (g *PermissionsGenerator) updatePermissionsFile(sch *schema.Schema, entity 
 		moduleName := sch.Solution.ModuleName
 
 		// Build initial permissions file structure
+		moduleNamespace := moduleName + "Module"
 		content := fmt.Sprintf(`using Volo.Abp.Authorization.Permissions;
 
 namespace %s.Application.Contracts.Permissions.%s
@@ -92,7 +93,7 @@ namespace %s.Application.Contracts.Permissions.%s
         }
     }
 }
-`, namespaceRoot, moduleName, moduleName, moduleName, newPermissions, entity.Name, entity.Name, entity.Name, entity.Name)
+`, namespaceRoot, moduleNamespace, moduleName, moduleName, newPermissions, entity.Name, entity.Name, entity.Name, entity.Name)
 		return content, nil
 	}
 
@@ -147,9 +148,10 @@ func (g *PermissionsGenerator) updatePermissionProvider(sch *schema.Schema, enti
 		moduleNameLower := strings.ToLower(moduleName[:1]) + moduleName[1:]
 
 		// Build initial permission provider file structure
+		moduleNamespace := moduleName + "Module"
 		content := fmt.Sprintf(`using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
-using %s.Localization.%s;
+using %s.Localization.%sModule;
 
 namespace %s.Application.Contracts.Permissions.%s
 {
@@ -163,7 +165,7 @@ namespace %s.Application.Contracts.Permissions.%s
 %s        }
     }
 }
-`, namespaceRoot, moduleName, namespaceRoot, moduleName, moduleName, moduleNameLower, moduleName, moduleName, moduleName, newDefinitions)
+`, namespaceRoot, moduleName, namespaceRoot, moduleNamespace, moduleName, moduleNameLower, moduleName, moduleName, moduleName, newDefinitions)
 		return content, nil
 	}
 

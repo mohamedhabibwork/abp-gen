@@ -34,7 +34,8 @@ func (g *DTOGenerator) Generate(sch *schema.Schema, entity *schema.Entity, paths
 	}
 
 	// Ensure DTO directory exists
-	dtoPath := paths.GetEntityDTOPath(entity.Name)
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	if err := os.MkdirAll(dtoPath, 0755); err != nil {
 		return fmt.Errorf("failed to create DTO directory: %w", err)
 	}
@@ -71,7 +72,8 @@ func (g *DTOGenerator) GenerateCreateDto(sch *schema.Schema, entity *schema.Enti
 		return fmt.Errorf("failed to execute create DTO template: %w", err)
 	}
 
-	dtoPath := paths.GetEntityDTOPath(entity.Name)
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	filePath := filepath.Join(dtoPath, "Create"+entity.Name+"Dto.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -90,7 +92,8 @@ func (g *DTOGenerator) GenerateUpdateDto(sch *schema.Schema, entity *schema.Enti
 		return fmt.Errorf("failed to execute update DTO template: %w", err)
 	}
 
-	dtoPath := paths.GetEntityDTOPath(entity.Name)
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	filePath := filepath.Join(dtoPath, "Update"+entity.Name+"Dto.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -123,7 +126,8 @@ func (g *DTOGenerator) GenerateEntityDto(sch *schema.Schema, entity *schema.Enti
 		return fmt.Errorf("failed to execute entity DTO template: %w", err)
 	}
 
-	dtoPath := paths.GetEntityDTOPath(entity.Name)
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	filePath := filepath.Join(dtoPath, entity.Name+"Dto.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -167,6 +171,7 @@ func (g *DTOGenerator) GenerateAppServiceInterface(sch *schema.Schema, entity *s
 		return fmt.Errorf("failed to execute app service interface template: %w", err)
 	}
 
-	filePath := filepath.Join(paths.ContractsServices, "I"+entity.Name+"AppService.cs")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	filePath := filepath.Join(paths.ContractsServices, moduleFolder, "I"+entity.Name+"AppService.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }

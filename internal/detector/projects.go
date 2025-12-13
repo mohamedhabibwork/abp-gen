@@ -161,11 +161,11 @@ func (p *LayerPaths) EnsureDirectories() error {
 }
 
 // GetEntityDTOPath returns the path for DTOs of a specific entity
-func (p *LayerPaths) GetEntityDTOPath(entityName string) string {
+func (p *LayerPaths) GetEntityDTOPath(moduleName, entityName string) string {
 	if p.ContractsDTOs == "" {
 		return ""
 	}
-	return filepath.Join(p.ContractsDTOs, entityName)
+	return filepath.Join(p.ContractsDTOs, moduleName, entityName)
 }
 
 // GetDbContextPath returns the path to the DbContext file
@@ -185,17 +185,19 @@ func (p *LayerPaths) GetIDbContextPath(serviceName string) string {
 }
 
 // GetPermissionsFilePath returns the path to the permissions file
-func (p *LayerPaths) GetPermissionsFilePath(serviceName string) string {
+func (p *LayerPaths) GetPermissionsFilePath(moduleName string) string {
 	if p.ContractsPermissions == "" {
 		return ""
 	}
-	return filepath.Join(p.ContractsPermissions, serviceName+"Permissions.cs")
+	moduleFolder := moduleName + "Module"
+	return filepath.Join(p.ContractsPermissions, moduleFolder, moduleName+"Permissions.cs")
 }
 
 // GetPermissionProviderPath returns the path to the permission provider file
-func (p *LayerPaths) GetPermissionProviderPath(serviceName string) string {
+func (p *LayerPaths) GetPermissionProviderPath(moduleName string) string {
 	if p.ContractsPermissions == "" {
 		return ""
 	}
-	return filepath.Join(p.ContractsPermissions, serviceName+"PermissionDefinitionProvider.cs")
+	moduleFolder := moduleName + "Module"
+	return filepath.Join(p.ContractsPermissions, moduleFolder, moduleName+"PermissionDefinitionProvider.cs")
 }

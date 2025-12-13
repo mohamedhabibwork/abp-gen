@@ -37,7 +37,8 @@ func (g *EventHandlerGenerator) Generate(sch *schema.Schema, entity *schema.Enti
 	}
 
 	// Ensure event handlers directory exists
-	handlersPath := filepath.Join(paths.Application, "EventHandlers")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	if err := os.MkdirAll(handlersPath, 0755); err != nil {
 		return fmt.Errorf("failed to create event handlers directory: %w", err)
 	}
@@ -70,7 +71,8 @@ func (g *EventHandlerGenerator) GenerateCreatedHandler(sch *schema.Schema, entit
 		return fmt.Errorf("failed to execute created event handler template: %w", err)
 	}
 
-	handlersPath := filepath.Join(paths.Application, "EventHandlers")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	filePath := filepath.Join(handlersPath, entity.Name+"CreatedEventHandler.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -89,7 +91,8 @@ func (g *EventHandlerGenerator) GenerateUpdatedHandler(sch *schema.Schema, entit
 		return fmt.Errorf("failed to execute updated event handler template: %w", err)
 	}
 
-	handlersPath := filepath.Join(paths.Application, "EventHandlers")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	filePath := filepath.Join(handlersPath, entity.Name+"UpdatedEventHandler.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -108,7 +111,8 @@ func (g *EventHandlerGenerator) GenerateDeletedHandler(sch *schema.Schema, entit
 		return fmt.Errorf("failed to execute deleted event handler template: %w", err)
 	}
 
-	handlersPath := filepath.Join(paths.Application, "EventHandlers")
+	moduleFolder := sch.Solution.ModuleName + "Module"
+	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	filePath := filepath.Join(handlersPath, entity.Name+"DeletedEventHandler.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }

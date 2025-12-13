@@ -1,13 +1,13 @@
 using System;
 using Volo.Abp.Application.Services;
-using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleName}};
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
-using {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}};
-using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}};
+using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module;
 using Volo.Abp.Domain.Repositories;
 using Microsoft.AspNetCore.Authorization;
-using {{.NamespaceRoot}}.Permissions;
-using {{.NamespaceRoot}}.Constants.{{.ModuleName}};
+using {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}}Module.{{.ModuleName}}Permissions;
+using {{.NamespaceRoot}}.Constants.{{.ModuleName}}Module;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Caching;
 using Volo.Abp.EventBus.Distributed;
@@ -15,13 +15,13 @@ using Microsoft.Extensions.Caching.Distributed;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
-using static {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}}.{{.ModuleName}}Permissions;
+using static {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}}Module.{{.ModuleName}}Permissions;
 {{- if .HasEvents}}
-using {{.NamespaceRoot}}.Events.{{.ModuleName}};
+using {{.NamespaceRoot}}.Events.{{.ModuleName}}Module;
 {{- end}}
 using Volo.Abp;
 
-namespace {{.NamespaceRoot}}.Application.Services.{{.ModuleName}}
+namespace {{.NamespaceRoot}}.Application.Services.{{.ModuleName}}Module
 {
     [RemoteService(false)]
     [Authorize({{.EntityName}}Management.Default)]

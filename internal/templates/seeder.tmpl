@@ -3,12 +3,12 @@ using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}};
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
 {{- if eq .PrimaryKeyType "Guid"}}
 using Volo.Abp.Guids;
 {{- end}}
 
-namespace {{.NamespaceRoot}}.Domain.Data.{{.ModuleName}}
+namespace {{.NamespaceRoot}}.Domain.Data.{{.ModuleName}}Module
 {
     public class {{.EntityName}}DataSeeder : IDataSeedContributor, ITransientDependency
     {

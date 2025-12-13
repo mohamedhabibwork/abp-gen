@@ -2,15 +2,15 @@ using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using System.ComponentModel.DataAnnotations;
 {{- if .HasEvents}}
-using {{.NamespaceRoot}}.Events.{{.ModuleName}};
+using {{.NamespaceRoot}}.Events.{{.ModuleName}}Module;
 {{- end}}
-using {{.NamespaceRoot}}.Constants.{{.ModuleName}};
+using {{.NamespaceRoot}}.Constants.{{.ModuleName}}Module;
 using Volo.Abp.Domain.Values;
 using System.Collections.Generic;
 using Volo.Abp.Domain.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}
+namespace {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module
 {
     public class {{.EntityName}} : {{.EntityType}}<{{.PrimaryKeyType}}>
     {
