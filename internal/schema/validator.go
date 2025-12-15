@@ -57,6 +57,25 @@ func (s *Schema) validateSolution() error {
 		s.Solution.ABPVersion = "9.0"
 	}
 
+	// Validate target framework
+	if s.Solution.TargetFramework == "" {
+		s.Solution.TargetFramework = TargetAuto
+	}
+	validTargets := map[TargetFramework]bool{
+		TargetASPNETCore9:       true,
+		TargetASPNETCore10:      true,
+		TargetABP8Microservice:  true,
+		TargetABP8Monolith:      true,
+		TargetABP9Microservice:  true,
+		TargetABP9Monolith:      true,
+		TargetABP10Microservice: true,
+		TargetABP10Monolith:     true,
+		TargetAuto:              true,
+	}
+	if !validTargets[s.Solution.TargetFramework] {
+		return fmt.Errorf("solution.targetFramework must be one of: aspnetcore9, aspnetcore10, abp8-monolith, abp8-microservice, abp9-monolith, abp9-microservice, abp10-monolith, abp10-microservice, or auto, got '%s'", s.Solution.TargetFramework)
+	}
+
 	if s.Solution.PrimaryKeyType == "" {
 		s.Solution.PrimaryKeyType = "Guid"
 	}
@@ -75,6 +94,13 @@ func (s *Schema) validateSolution() error {
 		return fmt.Errorf("solution.dbProvider must be 'efcore', 'mongodb', or 'both', got '%s'", s.Solution.DBProvider)
 	}
 
+	// Validate multi-tenancy configuration
+	if s.Solution.MultiTenancy != nil {
+		if err := s.validateMultiTenancy(s.Solution.MultiTenancy); err != nil {
+			return fmt.Errorf("solution.multiTenancy: %w", err)
+		}
+	}
+
 	// Set default validation type
 	if s.Options.ValidationType == "" {
 		s.Options.ValidationType = "fluentvalidation"
@@ -85,6 +111,25 @@ func (s *Schema) validateSolution() error {
 		return fmt.Errorf("options.validationType must be 'fluentvalidation' or 'native', got '%s'", s.Options.ValidationType)
 	}
 
+	// Validate localization merge configuration
+	if s.Options.LocalizationMerge != nil {
+		validStrategies := map[string]bool{"overwrite": true, "append": true, "skip": true}
+		if s.Options.LocalizationMerge.ConflictStrategy != "" && !validStrategies[s.Options.LocalizationMerge.ConflictStrategy] {
+			return fmt.Errorf("options.localizationMerge.conflictStrategy must be 'overwrite', 'append', or 'skip', got '%s'", s.Options.LocalizationMerge.ConflictStrategy)
+		}
+	}
+
+	return nil
+}
+
+func (s *Schema) validateMultiTenancy(mt *MultiTenancy) error {
+	validStrategies := map[string]bool{"none": true, "host": true, "tenant-per-db": true, "tenant-per-schema": true}
+	if mt.Strategy != "" && !validStrategies[mt.Strategy] {
+		return fmt.Errorf("strategy must be 'none', 'host', 'tenant-per-db', or 'tenant-per-schema', got '%s'", mt.Strategy)
+	}
+	if mt.TenantIdProperty == "" {
+		mt.TenantIdProperty = "TenantId"
+	}
 	return nil
 }
 
@@ -128,6 +173,102 @@ func (s *Schema) validateEntity(entity *Entity, existingNames map[string]bool) e
 		propertyNames[prop.Name] = true
 	}
 
+	// Validate custom repository
+	if entity.CustomRepository != nil {
+		for i, method := range entity.CustomRepository.Methods {
+			if err := s.validateRepositoryMethod(&method); err != nil {
+				return fmt.Errorf("customRepository.methods[%d] '%s': %w", i, method.Name, err)
+			}
+		}
+	}
+
+	// Validate domain events
+	for i, event := range entity.DomainEvents {
+		if err := s.validateDomainEvent(&event); err != nil {
+			return fmt.Errorf("domainEvents[%d] '%s': %w", i, event.Name, err)
+		}
+	}
+
+	// Validate enums
+	enumNames := make(map[string]bool)
+	for i, enum := range entity.Enums {
+		if err := s.validateEnum(&enum, enumNames); err != nil {
+			return fmt.Errorf("enums[%d] '%s': %w", i, enum.Name, err)
+		}
+		enumNames[enum.Name] = true
+	}
+
+	// Validate value object configuration
+	if entity.ValueObjectConfig != nil && entity.EntityType == "ValueObject" {
+		if err := s.validateValueObjectConfig(entity.ValueObjectConfig, entity.Properties); err != nil {
+			return fmt.Errorf("valueObjectConfig: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Schema) validateRepositoryMethod(method *RepositoryMethod) error {
+	if method.Name == "" {
+		return fmt.Errorf("method name is required")
+	}
+	if method.ReturnType == "" {
+		return fmt.Errorf("return type is required")
+	}
+	return nil
+}
+
+func (s *Schema) validateDomainEvent(event *DomainEvent) error {
+	if event.Name == "" {
+		return fmt.Errorf("event name is required")
+	}
+	if event.Type == "" {
+		event.Type = "domain"
+	}
+	validTypes := map[string]bool{"domain": true, "distributed": true}
+	if !validTypes[event.Type] {
+		return fmt.Errorf("event type must be 'domain' or 'distributed', got '%s'", event.Type)
+	}
+	return nil
+}
+
+func (s *Schema) validateEnum(enum *EnumDefinition, existingNames map[string]bool) error {
+	if enum.Name == "" {
+		return fmt.Errorf("enum name is required")
+	}
+	if existingNames[enum.Name] {
+		return fmt.Errorf("duplicate enum name '%s'", enum.Name)
+	}
+	if enum.UnderlyingType == "" {
+		enum.UnderlyingType = "int"
+	}
+	if len(enum.Values) == 0 {
+		return fmt.Errorf("enum must have at least one value")
+	}
+	valueNames := make(map[string]bool)
+	for i, val := range enum.Values {
+		if val.Name == "" {
+			return fmt.Errorf("enum value[%d] name is required", i)
+		}
+		if valueNames[val.Name] {
+			return fmt.Errorf("duplicate enum value name '%s'", val.Name)
+		}
+		valueNames[val.Name] = true
+	}
+	return nil
+}
+
+func (s *Schema) validateValueObjectConfig(config *ValueObjectConfig, properties []Property) error {
+	// Validate equality members exist
+	propNames := make(map[string]bool)
+	for _, prop := range properties {
+		propNames[prop.Name] = true
+	}
+	for _, member := range config.EqualityMembers {
+		if !propNames[member] {
+			return fmt.Errorf("equality member '%s' does not exist in properties", member)
+		}
+	}
 	return nil
 }
 
@@ -159,11 +300,29 @@ func (s *Schema) validateRelations(entity *Entity, entityNames map[string]bool) 
 		return nil
 	}
 
+	for i, rel := range entity.Relations.OneToOne {
+		if rel.TargetEntity == "" {
+			return fmt.Errorf("oneToOne[%d]: targetEntity is required", i)
+		}
+		if rel.NavigationProperty == "" {
+			rel.NavigationProperty = rel.TargetEntity
+		}
+	}
+
 	for i, rel := range entity.Relations.OneToMany {
 		if rel.TargetEntity == "" {
 			return fmt.Errorf("oneToMany[%d]: targetEntity is required", i)
 		}
 		// Note: Target entity might not exist yet (forward reference) - this is OK for generation
+	}
+
+	for i, rel := range entity.Relations.ManyToOne {
+		if rel.TargetEntity == "" {
+			return fmt.Errorf("manyToOne[%d]: targetEntity is required", i)
+		}
+		if rel.NavigationProperty == "" {
+			rel.NavigationProperty = rel.TargetEntity
+		}
 	}
 
 	for i, rel := range entity.Relations.ManyToMany {

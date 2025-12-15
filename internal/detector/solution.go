@@ -10,10 +10,12 @@ import (
 
 // SolutionInfo contains information about the detected ABP solution
 type SolutionInfo struct {
-	Path          string
-	Name          string
-	RootDirectory string
-	Projects      []ProjectInfo
+	Path            string
+	Name            string
+	RootDirectory   string
+	Projects        []ProjectInfo
+	TargetFramework string // Detected target framework: "aspnetcore9", "abp8-microservice", "abp8-monolith"
+	IsMicroservice  bool   // Whether this is a microservice architecture
 }
 
 // ProjectInfo contains information about a project in the solution
@@ -38,34 +40,78 @@ const (
 	ProjectTypeUnknown              ProjectType = "Unknown"
 )
 
-// FindSolution searches for a .sln file starting from the current directory
-// and moving upward through parent directories
+// FindSolution searches for solution files (.sln, .slnx, .abpsln, .abpslnx)
+// starting from the current directory and moving upward through parent directories.
+// If no solution file is found, attempts to discover projects from .csproj files.
 func FindSolution(startPath string) (*SolutionInfo, error) {
 	currentPath, err := filepath.Abs(startPath)
 	if err != nil {
 		return nil, err
 	}
 
-	for {
-		// Check for .sln files in current directory
-		files, err := filepath.Glob(filepath.Join(currentPath, "*.sln"))
-		if err != nil {
-			return nil, err
-		}
+	// Solution file extensions in priority order
+	solutionExtensions := []string{".sln", ".slnx", ".abpsln", ".abpslnx"}
 
-		if len(files) > 0 {
-			// Found a solution file
-			return ParseSolution(files[0])
+	for {
+		// Check for solution files in current directory
+		for _, ext := range solutionExtensions {
+			files, err := filepath.Glob(filepath.Join(currentPath, "*"+ext))
+			if err != nil {
+				continue
+			}
+
+			if len(files) > 0 {
+				// Found a solution file
+				return ParseSolution(files[0])
+			}
 		}
 
 		// Move up one directory
 		parentPath := filepath.Dir(currentPath)
 		if parentPath == currentPath {
-			// Reached root directory
-			return nil, fmt.Errorf("no solution file found")
+			// Reached root directory without finding solution
+			// Try to discover from csproj files
+			return discoverFromProjects(startPath)
 		}
 		currentPath = parentPath
 	}
+}
+
+// discoverFromProjects attempts to discover solution info from .csproj files
+// when no traditional solution file exists
+func discoverFromProjects(startPath string) (*SolutionInfo, error) {
+	csprojFiles, err := filepath.Glob(filepath.Join(startPath, "**/*.csproj"))
+	if err != nil || len(csprojFiles) == 0 {
+		// Try current directory
+		csprojFiles, err = filepath.Glob(filepath.Join(startPath, "*.csproj"))
+		if err != nil || len(csprojFiles) == 0 {
+			return nil, fmt.Errorf("no solution or project files found")
+		}
+	}
+
+	// Create a synthetic solution from discovered projects
+	info := &SolutionInfo{
+		Path:            startPath,
+		Name:            filepath.Base(startPath),
+		RootDirectory:   startPath,
+		Projects:        []ProjectInfo{},
+		TargetFramework: "abp8-monolith", // Default, will be refined
+		IsMicroservice:  false,
+	}
+
+	// Parse each csproj to extract project info
+	for _, csprojPath := range csprojFiles {
+		project := parseCsprojFile(csprojPath)
+		if project != nil {
+			info.Projects = append(info.Projects, *project)
+		}
+	}
+
+	// Detect target framework and architecture from projects
+	info.TargetFramework = DetectTargetFramework(info)
+	info.IsMicroservice = IsMicroserviceArchitecture(info)
+
+	return info, nil
 }
 
 // ParseSolution parses a solution file and extracts project information
@@ -80,10 +126,12 @@ func ParseSolution(solutionPath string) (*SolutionInfo, error) {
 	solutionName := strings.TrimSuffix(filepath.Base(solutionPath), ".sln")
 
 	info := &SolutionInfo{
-		Path:          solutionPath,
-		Name:          solutionName,
-		RootDirectory: solutionDir,
-		Projects:      []ProjectInfo{},
+		Path:            solutionPath,
+		Name:            solutionName,
+		RootDirectory:   solutionDir,
+		Projects:        []ProjectInfo{},
+		TargetFramework: "abp8-monolith", // Default
+		IsMicroservice:  false,
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -103,7 +151,60 @@ func ParseSolution(solutionPath string) (*SolutionInfo, error) {
 		return nil, err
 	}
 
+	// Detect target framework based on projects and structure
+	info.TargetFramework = DetectTargetFramework(info)
+	info.IsMicroservice = IsMicroserviceArchitecture(info)
+
 	return info, nil
+}
+
+// DetectTargetFramework detects the target framework based on solution structure and csproj files
+func DetectTargetFramework(info *SolutionInfo) string {
+	// Scan projects for ABP and .NET versions
+	abpVersion, dotnetVersion := ScanProjectsForVersions(info)
+
+	// Check for microservice architecture
+	isMicro := IsMicroserviceArchitecture(info)
+
+	// Map versions to target framework
+	targetFramework := MapToTargetFramework(abpVersion, dotnetVersion, isMicro)
+
+	return targetFramework
+}
+
+// IsMicroserviceArchitecture checks if the solution follows microservice architecture patterns
+func IsMicroserviceArchitecture(info *SolutionInfo) bool {
+	// Check for common microservice indicators:
+	// 1. Multiple service projects
+	// 2. Shared projects across services
+	// 3. Gateway or API gateway projects
+	// 4. Message bus or event bus projects
+
+	serviceCount := 0
+	hasGateway := false
+	hasShared := false
+
+	for _, proj := range info.Projects {
+		nameLower := strings.ToLower(proj.Name)
+
+		// Count service projects
+		if strings.Contains(nameLower, "service") && !strings.Contains(nameLower, "shared") {
+			serviceCount++
+		}
+
+		// Check for gateway
+		if strings.Contains(nameLower, "gateway") || strings.Contains(nameLower, "apigateway") {
+			hasGateway = true
+		}
+
+		// Check for shared projects
+		if strings.Contains(nameLower, "shared") {
+			hasShared = true
+		}
+	}
+
+	// Microservice if we have multiple services or gateway + services
+	return serviceCount > 1 || (hasGateway && serviceCount > 0 && hasShared)
 }
 
 // parseProjectLine parses a project line from the solution file

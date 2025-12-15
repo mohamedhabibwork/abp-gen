@@ -4,9 +4,17 @@
     "moduleName": "ProductService",
     "namespaceRoot": "SDDUMP.ProductService",
     "abpVersion": "9.0",
+    "targetFramework": "abp8-monolith",
     "primaryKeyType": "Guid",
     "dbProvider": "efcore",
-    "generateControllers": true
+    "generateControllers": true,
+    "multiTenancy": {
+      "enabled": true,
+      "strategy": "host",
+      "enableCrossTenant": false,
+      "tenantIdProperty": "TenantId",
+      "enableDataIsolation": true
+    }
   },
   "entities": [
     {
@@ -34,6 +42,67 @@
       "name": "Product",
       "tableName": "Products",
       "entityType": "FullAuditedAggregateRoot",
+      "generateIntegrationTests": true,
+      "enums": [
+        {
+          "name": "ProductStatus",
+          "underlyingType": "int",
+          "useLocalization": true,
+          "generateLookup": true,
+          "values": [
+            {"name": "Draft", "value": "0", "localizationKey": "ProductStatus.Draft"},
+            {"name": "Active", "value": "1", "localizationKey": "ProductStatus.Active"},
+            {"name": "Discontinued", "value": "2", "localizationKey": "ProductStatus.Discontinued"}
+          ]
+        }
+      ],
+      "customRepository": {
+        "methods": [
+          {
+            "name": "GetActiveProducts",
+            "returnType": "Task<List<Product>>",
+            "parameters": [],
+            "isAsync": true,
+            "queryHint": "WHERE IsActive = true",
+            "description": "Gets all active products"
+          },
+          {
+            "name": "GetProductsByCategoryAsync",
+            "returnType": "Task<List<Product>>",
+            "parameters": [
+              {"name": "categoryId", "type": "Guid"}
+            ],
+            "isAsync": true,
+            "description": "Gets products by category"
+          }
+        ]
+      },
+      "domainEvents": [
+        {
+          "name": "ProductCreated",
+          "type": "domain",
+          "payload": [
+            {"name": "ProductId", "type": "Guid"},
+            {"name": "ProductName", "type": "string"}
+          ],
+          "handlers": [
+            {
+              "name": "ProductCreatedHandler",
+              "handlerType": "local",
+              "action": "Send notification when product is created"
+            }
+          ]
+        },
+        {
+          "name": "ProductPriceChanged",
+          "type": "distributed",
+          "payload": [
+            {"name": "ProductId", "type": "Guid"},
+            {"name": "OldPrice", "type": "decimal"},
+            {"name": "NewPrice", "type": "decimal"}
+          ]
+        }
+      ],
       "properties": [
         {
           "name": "Name",
@@ -68,25 +137,112 @@
           "isRequired": true,
           "nullable": false,
           "defaultValue": "true"
+        },
+        {
+          "name": "Status",
+          "type": "ProductStatus",
+          "isRequired": true,
+          "nullable": false,
+          "isEnum": true,
+          "enumName": "ProductStatus",
+          "defaultValue": "0"
         }
       ],
       "relations": {
+        "oneToOne": [
+          {
+            "targetEntity": "ProductInventory",
+            "foreignKeyName": "ProductId",
+            "navigationProperty": "Inventory",
+            "isRequired": false,
+            "isOwned": false,
+            "cascadeDelete": true
+          }
+        ],
         "oneToMany": [
           {
             "targetEntity": "ProductReview",
             "foreignKeyName": "ProductId",
             "navigationProperty": "Reviews",
-            "isCollection": true
+            "isCollection": true,
+            "cascadeDelete": false
+          }
+        ],
+        "manyToOne": [
+          {
+            "targetEntity": "Supplier",
+            "foreignKeyName": "SupplierId",
+            "navigationProperty": "Supplier",
+            "isRequired": false,
+            "cascadeDelete": false
           }
         ],
         "manyToMany": [
           {
             "targetEntity": "Category",
             "joinEntity": "ProductCategory",
-            "navigationProperty": "Categories"
+            "navigationProperty": "Categories",
+            "inverseProperty": "Products"
           }
         ]
       }
+    },
+    {
+      "name": "ProductInventory",
+      "tableName": "ProductInventories",
+      "entityType": "Entity",
+      "properties": [
+        {
+          "name": "ProductId",
+          "type": "Guid",
+          "isRequired": true,
+          "nullable": false,
+          "isForeignKey": true,
+          "targetEntity": "Product"
+        },
+        {
+          "name": "QuantityOnHand",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "0"
+        },
+        {
+          "name": "ReorderLevel",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "10"
+        }
+      ]
+    },
+    {
+      "name": "Supplier",
+      "tableName": "Suppliers",
+      "entityType": "AuditedAggregateRoot",
+      "properties": [
+        {
+          "name": "Name",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 200,
+          "nullable": false
+        },
+        {
+          "name": "ContactEmail",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 100,
+          "nullable": true,
+          "validationRules": [
+            {
+              "type": "RegularExpression",
+              "value": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+              "errorMessage": "Invalid email format"
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "ProductReview",
@@ -216,7 +372,13 @@
     "useLocalization": true,
     "localizationCultures": ["en", "ar"],
     "validationType": "fluentvalidation",
-    "generateEventHandlers": true
+    "generateEventHandlers": true,
+    "generateIntegrationTests": true,
+    "localizationMerge": {
+      "enabled": true,
+      "targetPath": "Localization",
+      "conflictStrategy": "append"
+    }
   }
 }
 

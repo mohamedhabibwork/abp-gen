@@ -9,20 +9,35 @@ Cross-platform CLI tool for generating ABP Framework C# code from JSON schemas.
 
 ## Features
 
+### Core Generation
 - ✅ **Full CRUD Generation**: Entities, DTOs, Services, Repositories, Controllers
-- ✅ **Smart File Merging**: Intelligent merging of existing files with conflict resolution
+- ✅ **Custom Repositories**: Define custom repository methods with query hints
+- ✅ **Domain Events**: Domain and distributed events with handlers
+- ✅ **Enum Generation**: Strongly-typed enums with localization
+- ✅ **Value Objects**: Enhanced value object generation with equality
+- ✅ **Rich Relationships**: One-to-One, One-to-Many, Many-to-One, Many-to-Many, Self-referencing
+- ✅ **Integration Tests**: xUnit/MSTest test generation for ASP.NET Core and ABP
+
+### Smart Detection
+- 🔍 **Multi-Format Solutions**: Auto-detect .sln, .slnx, .abpsln, .abpslnx, .csproj
+- 🔍 **Framework Detection**: Auto-detect ASP.NET Core 9/10 and ABP 8/9/10
+- 🔍 **Multi-Tenancy Detection**: Infer tenancy from configs and module files
+- 🔍 **Microservice Detection**: Identify microservice architecture patterns
+- 🔍 **CLI Scaffolding**: Create solutions with `abp` or `dotnet` commands
+
+### Advanced Features
+- ✅ **Smart File Merging**: Intelligent merging with conflict resolution
+- ✅ **Multi-Tenancy**: Support for host, tenant-per-db, tenant-per-schema
+- ✅ **Localization Merging**: JSON localization with conflict strategies
 - ✅ **Domain Managers**: Business logic encapsulation in domain managers
-- ✅ **FluentValidation**: Automatic DTO validation with FluentValidation
-- ✅ **Distributed Cache**: Enhanced caching with expiration and list caching
-- ✅ **Distributed Event Bus**: Event-driven architecture with distributed events
-- ✅ **Relationship Support**: One-to-Many and Many-to-Many relationships
+- ✅ **FluentValidation**: Automatic DTO validation
 - ✅ **Multi-Database**: Entity Framework Core and MongoDB
 - ✅ **Interactive Mode**: Build schemas through guided prompts
 - ✅ **Customizable Templates**: Extract and modify embedded templates
 - ✅ **Cross-Platform**: Works on Windows, Linux, and macOS
 - ✅ **Dry-Run Mode**: Preview changes before applying
-- ✅ **Idempotent**: Safe to run multiple times
-- ✅ **ABP v9+ Compatible**: Follows latest ABP Framework conventions
+
+📖 **See [SMART_DETECTION.md](SMART_DETECTION.md) for detailed detection features**
 
 ## Installation
 
@@ -626,17 +641,38 @@ For security vulnerabilities, please see [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 
-- [ ] Add support for custom repositories with methods
-- [ ] Generate integration tests
-- [ ] Support for Domain Events
+### ✅ Completed Features
+
+- [x] Add support for custom repositories with methods
+- [x] Generate integration tests (xUnit/MSTest for ASP.NET Core and ABP)
+- [x] Support for Domain Events (domain and distributed events with handlers)
+- [x] More relationship types (One-to-One, Many-to-One, Self-referencing)
+- [x] Enum generation with localization support
+- [x] Value Object generation improvements (immutability, equality, factory methods)
+- [x] Multi-tenancy configuration (host, tenant-per-db, tenant-per-schema)
+- [x] Localization file updates (JSON merging with conflict strategies)
+- [x] Smart detection (auto-detect framework, tenancy, microservices)
+- [x] CLI scaffolding (create solutions with `abp` or `dotnet` commands)
+- [x] CLI flag overrides (override schema values from command line)
+
+### 🚧 Planned Features
+
 - [ ] Angular/Blazor frontend generation
-- [ ] Azure DevOps/GitHub Actions workflows
-- [ ] Docker support
-- [ ] More relationship types (One-to-One, etc.)
-- [ ] Enum generation
-- [ ] Value Object generation improvements
-- [ ] Multi-tenancy configuration
-- [ ] Localization file updates (JSON merging)
+- [ ] Azure DevOps/GitHub Actions workflow templates
+- [ ] Docker support and Dockerfile generation
+- [ ] GraphQL API generation
+- [ ] gRPC service generation
+- [ ] Background job generation (Hangfire/Quartz)
+- [ ] SignalR hub generation
+- [ ] API versioning support
+- [ ] Swagger/OpenAPI documentation enhancements
+- [ ] Database migration script generation
+- [ ] Seed data generation from schema
+- [ ] Multi-language template support
+- [ ] Plugin system for custom generators
+- [ ] Web UI for schema editing
+- [ ] Schema validation and linting
+- [ ] Import from existing C# code (reverse engineering)
 
 ## Version History
 

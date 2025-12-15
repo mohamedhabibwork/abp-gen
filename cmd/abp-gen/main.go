@@ -25,16 +25,26 @@ var (
 	verbose bool
 
 	// Generate command flags
-	inputFile     string
-	solutionPath  string
-	moduleName    string
-	templatesPath string
-	dryRun        bool
-	force         bool
-	mergeMode     bool
-	noMerge       bool
-	mergeAll      bool
-	mergeStrategy string
+	inputFile       string
+	solutionPath    string
+	moduleName      string
+	templatesPath   string
+	targetFramework string
+	autoScaffold    bool
+	dryRun          bool
+	force           bool
+	mergeMode       bool
+	noMerge         bool
+	mergeAll        bool
+	mergeStrategy   string
+
+	// Schema override flags (can override values from schema file)
+	schemaSolutionName        string
+	schemaNamespaceRoot       string
+	schemaABPVersion          string
+	schemaPrimaryKeyType      string
+	schemaDBProvider          string
+	schemaGenerateControllers bool
 )
 
 func main() {
@@ -88,9 +98,17 @@ var generateCmd = &cobra.Command{
 
 If --input is not provided, enters interactive mode to build the schema.
 
+Schema values can be overridden via CLI flags. CLI flags take precedence over schema file values.
+
 Examples:
   # Generate from schema file
   abp-gen generate --input schema.json
+
+  # Override module name from command line
+  abp-gen generate --input schema.json --moduleName=ProductService
+
+  # Override multiple values
+  abp-gen generate --input schema.json --moduleName=ProductService --namespaceRoot=MyCompany.MyApp --primaryKeyType=Guid
 
   # Interactive mode
   abp-gen generate
@@ -113,13 +131,24 @@ func init() {
 	generateCmd.Flags().StringVarP(&inputFile, "input", "i", "", "input schema JSON file (optional, triggers interactive mode if not provided)")
 	generateCmd.Flags().StringVarP(&solutionPath, "solution", "s", "", "path to solution file (auto-detected if not provided)")
 	generateCmd.Flags().StringVarP(&moduleName, "module", "m", "", "module name (read from schema if not provided)")
+	generateCmd.Flags().StringVar(&moduleName, "moduleName", "", "module name (same as --module, -m)")
 	generateCmd.Flags().StringVarP(&templatesPath, "templates", "t", "", "custom templates directory")
+	generateCmd.Flags().StringVar(&targetFramework, "target", "auto", "target framework: aspnetcore9, aspnetcore10, abp8-monolith, abp8-microservice, abp9-*, abp10-*, or auto")
+	generateCmd.Flags().BoolVar(&autoScaffold, "auto-scaffold", false, "automatically create missing solutions/projects without prompting")
 	generateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "preview changes without writing files")
 	generateCmd.Flags().BoolVar(&force, "force", false, "overwrite existing files")
 	generateCmd.Flags().BoolVar(&mergeMode, "merge", false, "enable smart merge mode for existing files")
 	generateCmd.Flags().BoolVar(&noMerge, "no-merge", false, "disable merge mode (skip existing files)")
 	generateCmd.Flags().BoolVar(&mergeAll, "merge-all", false, "automatically merge all files without prompting")
 	generateCmd.Flags().StringVar(&mergeStrategy, "merge-strategy", "", "merge strategy: pattern, ast, or json (auto-detected if not specified)")
+
+	// Schema override flags - can override values from schema file
+	generateCmd.Flags().StringVar(&schemaSolutionName, "solutionName", "", "solution name (overrides schema)")
+	generateCmd.Flags().StringVar(&schemaNamespaceRoot, "namespaceRoot", "", "namespace root (overrides schema, e.g., MyCompany.MyApp)")
+	generateCmd.Flags().StringVar(&schemaABPVersion, "abpVersion", "", "ABP version (overrides schema, e.g., 10.0)")
+	generateCmd.Flags().StringVar(&schemaPrimaryKeyType, "primaryKeyType", "", "primary key type: Guid or long (overrides schema)")
+	generateCmd.Flags().StringVar(&schemaDBProvider, "dbProvider", "", "database provider: efcore, mongodb, or both (overrides schema)")
+	generateCmd.Flags().BoolVar(&schemaGenerateControllers, "generateControllers", false, "generate controllers (overrides schema)")
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(generateCmd)
@@ -138,6 +167,69 @@ func runInit() error {
 	fmt.Println("Use --templates ./abp-gen-templates when generating code to use customized templates.")
 
 	return nil
+}
+
+// applySchemaOverrides applies CLI flag values to schema, overriding schema file values.
+// CLI flags take precedence over schema file values when provided.
+func applySchemaOverrides(sch *schema.Schema) {
+	// Override solution name
+	if schemaSolutionName != "" {
+		sch.Solution.Name = schemaSolutionName
+		if verbose {
+			fmt.Printf("✓ Overriding solution name from CLI: %s\n", schemaSolutionName)
+		}
+	}
+
+	// Override namespace root
+	if schemaNamespaceRoot != "" {
+		sch.Solution.NamespaceRoot = schemaNamespaceRoot
+		if verbose {
+			fmt.Printf("✓ Overriding namespace root from CLI: %s\n", schemaNamespaceRoot)
+		}
+	}
+
+	// Override module name (supports both --module/-m and --moduleName)
+	if moduleName != "" {
+		sch.Solution.ModuleName = moduleName
+		if verbose {
+			fmt.Printf("✓ Overriding module name from CLI: %s\n", moduleName)
+		}
+	}
+
+	// Override ABP version
+	if schemaABPVersion != "" {
+		sch.Solution.ABPVersion = schemaABPVersion
+		if verbose {
+			fmt.Printf("✓ Overriding ABP version from CLI: %s\n", schemaABPVersion)
+		}
+	}
+
+	// Override primary key type
+	if schemaPrimaryKeyType != "" {
+		sch.Solution.PrimaryKeyType = schemaPrimaryKeyType
+		if verbose {
+			fmt.Printf("✓ Overriding primary key type from CLI: %s\n", schemaPrimaryKeyType)
+		}
+	}
+
+	// Override database provider
+	if schemaDBProvider != "" {
+		sch.Solution.DBProvider = schemaDBProvider
+		if verbose {
+			fmt.Printf("✓ Overriding database provider from CLI: %s\n", schemaDBProvider)
+		}
+	}
+
+	// Override generate controllers
+	// Note: Bool flags default to false, so we check if it was explicitly set
+	// by checking the command's flag set. For now, we'll override if true.
+	// Users can set it to false in schema file if they don't want controllers.
+	if schemaGenerateControllers {
+		sch.Solution.GenerateControllers = true
+		if verbose {
+			fmt.Println("✓ Overriding generate controllers from CLI: true")
+		}
+	}
 }
 
 func runGenerate() error {
@@ -160,13 +252,16 @@ func runGenerate() error {
 		}
 	}
 
+	// Apply CLI flag overrides to schema (CLI flags take precedence)
+	applySchemaOverrides(sch)
+
 	// Validate schema
 	if err := sch.Validate(); err != nil {
 		return fmt.Errorf("schema validation failed: %w", err)
 	}
 
 	// Detect solution
-	fmt.Println("\nDetecting ABP solution structure...")
+	fmt.Println("\nDetecting solution structure...")
 	var solutionInfo *detector.SolutionInfo
 
 	if solutionPath != "" {
@@ -175,11 +270,72 @@ func runGenerate() error {
 		solutionInfo, err = detector.FindSolution(".")
 	}
 
+	// If no solution found, offer to create one
 	if err != nil {
-		return fmt.Errorf("failed to detect solution: %w", err)
+		scaffolder := prompts.NewScaffolder()
+		created, newSolutionPath, scaffoldErr := scaffolder.PromptCreateSolution(".", autoScaffold)
+
+		if !created {
+			if scaffoldErr != nil {
+				return fmt.Errorf("failed to detect or create solution: %w", scaffoldErr)
+			}
+			return fmt.Errorf("failed to detect solution: %w", err)
+		}
+
+		// Try to detect the newly created solution
+		solutionInfo, err = detector.FindSolution(newSolutionPath)
+		if err != nil {
+			return fmt.Errorf("failed to detect newly created solution: %w", err)
+		}
 	}
 
 	fmt.Printf("✓ Found solution: %s\n", solutionInfo.Name)
+
+	// Determine target framework
+	effectiveTarget := targetFramework
+	if effectiveTarget == "auto" || effectiveTarget == "" {
+		effectiveTarget = solutionInfo.TargetFramework
+		fmt.Printf("✓ Auto-detected target framework: %s", effectiveTarget)
+
+		// Show detected versions for transparency
+		if verbose {
+			abpVer, dotnetVer := detector.ScanProjectsForVersions(solutionInfo)
+			if abpVer != "" {
+				fmt.Printf(" (ABP %s", abpVer)
+				if dotnetVer != "" {
+					fmt.Printf(", .NET %s", dotnetVer)
+				}
+				fmt.Printf(")")
+			} else if dotnetVer != "" {
+				fmt.Printf(" (.NET %s)", dotnetVer)
+			}
+		}
+		fmt.Println()
+	} else {
+		fmt.Printf("✓ Using specified target framework: %s\n", effectiveTarget)
+	}
+
+	// Update schema with target framework if not already set
+	if sch.Solution.TargetFramework == "" || sch.Solution.TargetFramework == "auto" {
+		sch.Solution.TargetFramework = schema.TargetFramework(effectiveTarget)
+	}
+
+	// Auto-detect and show configuration summary
+	configScanner := detector.NewConfigScanner()
+	tenancyEnabled, tenancyStrategy, _ := configScanner.DetectMultiTenancy(solutionInfo)
+
+	// Update schema with detected settings if not already set
+	if sch.Solution.MultiTenancy == nil && tenancyEnabled {
+		sch.Solution.MultiTenancy = &schema.MultiTenancy{
+			Enabled:             true,
+			Strategy:            tenancyStrategy,
+			EnableDataIsolation: true,
+			TenantIdProperty:    "TenantId",
+		}
+		if verbose {
+			fmt.Printf("✓ Auto-detected multi-tenancy: %s strategy\n", tenancyStrategy)
+		}
+	}
 
 	// Show detected projects in verbose mode
 	if verbose {
@@ -191,6 +347,10 @@ func runGenerate() error {
 			}
 			fmt.Printf("  - %s (%s)\n", project.Name, projectType)
 		}
+
+		// Show configuration summary
+		fmt.Println("\nConfiguration Summary:")
+		fmt.Print(configScanner.SummarizeConfiguration(solutionInfo))
 	}
 
 	// Detect layer paths
@@ -209,13 +369,17 @@ func runGenerate() error {
 		if err := paths.EnsureDirectories(); err != nil {
 			return fmt.Errorf("failed to create directories: %w", err)
 		}
+		// Ensure module-specific directories exist
+		if err := paths.EnsureModuleDirectories(module); err != nil {
+			return fmt.Errorf("failed to create module directories: %w", err)
+		}
 	}
 
 	// Handle merge flags
 	enableMerge := mergeMode && !noMerge && !force
 
-	// Initialize generators
-	tmplLoader := templates.NewLoader(templatesPath)
+	// Initialize generators with target framework
+	tmplLoader := templates.NewLoaderWithTarget(templatesPath, effectiveTarget)
 	w := writer.NewWriterWithMerge(dryRun, force, verbose, enableMerge)
 
 	// Configure merge engine with flags if merge is enabled
@@ -234,6 +398,12 @@ func runGenerate() error {
 	serviceGen := generator.NewServiceGenerator(tmplLoader, w)
 	permissionsGen := generator.NewPermissionsGenerator(tmplLoader, w)
 	relationHandler := generator.NewRelationshipHandler()
+	customRepoGen := generator.NewCustomRepositoryGenerator(tmplLoader, w)
+	domainEventsGen := generator.NewDomainEventsGenerator(tmplLoader, w)
+	enumGen := generator.NewEnumGenerator(tmplLoader, w)
+	valueObjectGen := generator.NewValueObjectGenerator(tmplLoader, w)
+	localizationGen := generator.NewLocalizationGenerator(w)
+	integrationTestGen := generator.NewIntegrationTestGenerator(tmplLoader, w)
 
 	var efcoreGen *generator.EFCoreGenerator
 	var mongoGen *generator.MongoDBGenerator
@@ -255,6 +425,14 @@ func runGenerate() error {
 		fmt.Println("\n✓ Safe mode - existing files will be skipped")
 	}
 
+	// Generate test project if integration tests are enabled
+	if sch.Options.GenerateIntegrationTests {
+		fmt.Println("\n✓ Integration tests enabled - generating test infrastructure")
+		if err := integrationTestGen.GenerateTestProject(sch, paths); err != nil {
+			fmt.Printf("⚠️  Failed to generate test project: %v\n", err)
+		}
+	}
+
 	// Generate code for each entity
 	fmt.Printf("\nGenerating code for %d entity(s)...\n\n", len(sch.Entities))
 
@@ -266,13 +444,38 @@ func runGenerate() error {
 			return fmt.Errorf("failed to process relationships for %s: %w", entity.Name, err)
 		}
 
-		// Generate entity and related files
-		if err := entityGen.Generate(sch, &entity, paths); err != nil {
-			return fmt.Errorf("failed to generate entity %s: %w", entity.Name, err)
+		// Generate enums if defined
+		if err := enumGen.Generate(sch, &entity, paths); err != nil {
+			return fmt.Errorf("failed to generate enums for %s: %w", entity.Name, err)
+		}
+
+		// Generate value object or entity
+		if entity.EntityType == "ValueObject" {
+			if err := valueObjectGen.Generate(sch, &entity, paths); err != nil {
+				return fmt.Errorf("failed to generate value object %s: %w", entity.Name, err)
+			}
+			if err := valueObjectGen.GenerateFactory(sch, &entity, paths); err != nil {
+				return fmt.Errorf("failed to generate value object factory for %s: %w", entity.Name, err)
+			}
+		} else {
+			// Generate entity and related files
+			if err := entityGen.Generate(sch, &entity, paths); err != nil {
+				return fmt.Errorf("failed to generate entity %s: %w", entity.Name, err)
+			}
 		}
 
 		if err := entityGen.GenerateRepository(sch, &entity, paths); err != nil {
 			return fmt.Errorf("failed to generate repository for %s: %w", entity.Name, err)
+		}
+
+		// Generate custom repository if defined
+		if err := customRepoGen.Generate(sch, &entity, paths); err != nil {
+			return fmt.Errorf("failed to generate custom repository for %s: %w", entity.Name, err)
+		}
+
+		// Generate domain events if defined
+		if err := domainEventsGen.Generate(sch, &entity, paths); err != nil {
+			return fmt.Errorf("failed to generate domain events for %s: %w", entity.Name, err)
 		}
 
 		if err := managerGen.Generate(sch, &entity, paths); err != nil {
@@ -327,6 +530,11 @@ func runGenerate() error {
 			return fmt.Errorf("failed to generate localization for %s: %w", entity.Name, err)
 		}
 
+		// Generate and merge localization files
+		if err := localizationGen.GenerateEntityLocalization(sch, &entity, paths); err != nil {
+			return fmt.Errorf("failed to generate entity localization for %s: %w", entity.Name, err)
+		}
+
 		// Generate event handlers
 		if err := eventHandlerGen.Generate(sch, &entity, paths); err != nil {
 			return fmt.Errorf("failed to generate event handlers for %s: %w", entity.Name, err)
@@ -344,6 +552,11 @@ func runGenerate() error {
 			if err := mongoGen.Generate(sch, &entity, paths); err != nil {
 				return fmt.Errorf("failed to generate MongoDB files for %s: %w", entity.Name, err)
 			}
+		}
+
+		// Generate integration tests
+		if err := integrationTestGen.Generate(sch, &entity, paths); err != nil {
+			return fmt.Errorf("failed to generate integration tests for %s: %w", entity.Name, err)
 		}
 
 		fmt.Printf("✓ Generated %s\n\n", entity.Name)

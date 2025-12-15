@@ -160,6 +160,41 @@ func (p *LayerPaths) EnsureDirectories() error {
 	return nil
 }
 
+// EnsureModuleDirectories creates all necessary module-specific directories with "Module" prefix
+func (p *LayerPaths) EnsureModuleDirectories(moduleName string) error {
+	moduleFolder := moduleName + "Module"
+	
+	directories := []string{
+		filepath.Join(p.DomainEntities, moduleFolder),
+		filepath.Join(p.DomainRepositories, moduleFolder),
+		filepath.Join(p.DomainManagers, moduleFolder),
+		filepath.Join(p.DomainData, moduleFolder),
+		filepath.Join(p.DomainSharedConstants, moduleFolder),
+		filepath.Join(p.DomainSharedEvents, moduleFolder),
+		filepath.Join(p.ContractsPermissions, moduleFolder),
+		filepath.Join(p.ContractsServices, moduleFolder),
+		filepath.Join(p.ApplicationServices, moduleFolder),
+		filepath.Join(p.ApplicationAutoMapper, moduleFolder),
+		filepath.Join(p.ApplicationValidators, moduleFolder),
+		filepath.Join(p.ApplicationEventHandlers, moduleFolder),
+		filepath.Join(p.HttpApiControllers, moduleFolder),
+		filepath.Join(p.EFCoreConfigurations, moduleFolder),
+		filepath.Join(p.EFCoreRepositories, moduleFolder),
+		filepath.Join(p.MongoDBRepositories, moduleFolder),
+	}
+
+	for _, dir := range directories {
+		if dir == "" {
+			continue
+		}
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create module directory %s: %w", dir, err)
+		}
+	}
+
+	return nil
+}
+
 // GetEntityDTOPath returns the path for DTOs of a specific entity
 func (p *LayerPaths) GetEntityDTOPath(moduleName, entityName string) string {
 	if p.ContractsDTOs == "" {

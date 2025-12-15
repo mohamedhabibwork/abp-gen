@@ -6,11 +6,25 @@ import (
 )
 
 // JSONMerger handles JSON file merging
-type JSONMerger struct{}
+type JSONMerger struct {
+	strategy string // Merge strategy: "overwrite", "append", "skip"
+}
 
-// NewJSONMerger creates a new JSON merger
+// NewJSONMerger creates a new JSON merger with default strategy
 func NewJSONMerger() *JSONMerger {
-	return &JSONMerger{}
+	return &JSONMerger{
+		strategy: "append", // Default strategy
+	}
+}
+
+// NewJSONMergerWithStrategy creates a new JSON merger with specified strategy
+func NewJSONMergerWithStrategy(strategy string) *JSONMerger {
+	if strategy == "" {
+		strategy = "append"
+	}
+	return &JSONMerger{
+		strategy: strategy,
+	}
 }
 
 // Merge merges two JSON files
@@ -27,14 +41,14 @@ func (m *JSONMerger) Merge(existing string, newContent string) (string, []Confli
 		return "", nil, fmt.Errorf("failed to parse new JSON: %w", err)
 	}
 
-	// Detect conflicts
-	conflicts := m.detectConflicts(existingData, newData)
-
-	if len(conflicts) > 0 {
-		return existing, conflicts, nil
+	// Detect conflicts only for "append" strategy
+	// For "overwrite" and "skip", conflicts are handled by the strategy itself
+	var conflicts []Conflict
+	if m.strategy == "append" {
+		conflicts = m.detectConflicts(existingData, newData)
 	}
 
-	// Merge recursively
+	// Merge recursively (always merge, strategy determines how conflicts are handled)
 	merged := m.mergeObjects(existingData, newData)
 
 	// Convert back to JSON with indentation
@@ -43,7 +57,7 @@ func (m *JSONMerger) Merge(existing string, newContent string) (string, []Confli
 		return "", nil, fmt.Errorf("failed to marshal merged JSON: %w", err)
 	}
 
-	return string(result), nil, nil
+	return string(result), conflicts, nil
 }
 
 // detectConflicts detects conflicts in JSON merging
@@ -72,34 +86,77 @@ func (m *JSONMerger) detectConflicts(existing map[string]interface{}, new map[st
 func (m *JSONMerger) mergeObjects(existing map[string]interface{}, new map[string]interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
 
-	// Copy existing values
+	// Deep copy existing values
 	for key, value := range existing {
-		result[key] = value
+		result[key] = m.deepCopyValue(value)
 	}
 
-	// Merge new values
+	// Merge new values based on strategy
 	for key, newValue := range new {
 		existingValue, exists := result[key]
 
 		if !exists {
 			// Key doesn't exist, add it
-			result[key] = newValue
+			result[key] = m.deepCopyValue(newValue)
 		} else {
-			// Key exists, try to merge
-			existingMap, existingIsMap := existingValue.(map[string]interface{})
-			newMap, newIsMap := newValue.(map[string]interface{})
+			// Key exists, apply merge strategy
+			switch m.strategy {
+			case "overwrite":
+				// Overwrite with new value
+				result[key] = m.deepCopyValue(newValue)
+			case "skip":
+				// Keep existing value (already copied)
+				// result[key] remains as existingValue
+			case "append":
+				fallthrough
+			default:
+				// Try to merge intelligently
+				existingMap, existingIsMap := existingValue.(map[string]interface{})
+				newMap, newIsMap := newValue.(map[string]interface{})
 
-			if existingIsMap && newIsMap {
-				// Both are maps, merge recursively
-				result[key] = m.mergeObjects(existingMap, newMap)
-			} else {
-				// Not maps or different types, keep existing
-				result[key] = existingValue
+				if existingIsMap && newIsMap {
+					// Both are maps, merge recursively
+					result[key] = m.mergeObjects(existingMap, newMap)
+				} else {
+					// Check if both are arrays
+					existingArray, existingIsArray := existingValue.([]interface{})
+					newArray, newIsArray := newValue.([]interface{})
+					if existingIsArray && newIsArray {
+						// Merge arrays
+						result[key] = m.MergeArrays(existingArray, newArray)
+					} else {
+						// Not maps or arrays, keep existing for append strategy
+						// result[key] remains as existingValue
+					}
+				}
 			}
 		}
 	}
 
 	return result
+}
+
+// deepCopyValue creates a deep copy of a JSON value
+func (m *JSONMerger) deepCopyValue(value interface{}) interface{} {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		// Deep copy map
+		copied := make(map[string]interface{})
+		for k, val := range v {
+			copied[k] = m.deepCopyValue(val)
+		}
+		return copied
+	case []interface{}:
+		// Deep copy array
+		copied := make([]interface{}, len(v))
+		for i, val := range v {
+			copied[i] = m.deepCopyValue(val)
+		}
+		return copied
+	default:
+		// Primitive types can be copied directly
+		return value
+	}
 }
 
 // valuesEqual checks if two JSON values are equal

@@ -25,9 +25,23 @@ func (h *RelationshipHandler) ProcessRelationships(sch *schema.Schema, entity *s
 		return nil
 	}
 
+	// Process One-to-One relationships
+	for _, rel := range entity.Relations.OneToOne {
+		if err := h.processOneToOne(sch, entity, &rel); err != nil {
+			return err
+		}
+	}
+
 	// Process One-to-Many relationships
 	for _, rel := range entity.Relations.OneToMany {
 		if err := h.processOneToMany(sch, entity, &rel); err != nil {
+			return err
+		}
+	}
+
+	// Process Many-to-One relationships
+	for _, rel := range entity.Relations.ManyToOne {
+		if err := h.processManyToOne(sch, entity, &rel); err != nil {
 			return err
 		}
 	}
@@ -37,6 +51,48 @@ func (h *RelationshipHandler) ProcessRelationships(sch *schema.Schema, entity *s
 		if err := h.processManyToMany(sch, entity, &rel); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// processOneToOne processes a one-to-one relationship
+func (h *RelationshipHandler) processOneToOne(sch *schema.Schema, entity *schema.Entity, rel *schema.OneToOneRelation) error {
+	// One-to-One relationships are handled in templates:
+	// 1. Principal entity gets a reference navigation property
+	// 2. Dependent entity gets a foreign key property and navigation property
+	// 3. DTOs include navigation data
+	// 4. EF Core configuration defines the relationship
+
+	// Ensure navigation property name is set
+	if rel.NavigationProperty == "" {
+		rel.NavigationProperty = rel.TargetEntity
+	}
+
+	// Ensure foreign key name is set
+	if rel.ForeignKeyName == "" {
+		rel.ForeignKeyName = rel.TargetEntity + "Id"
+	}
+
+	return nil
+}
+
+// processManyToOne processes a many-to-one relationship
+func (h *RelationshipHandler) processManyToOne(sch *schema.Schema, entity *schema.Entity, rel *schema.ManyToOneRelation) error {
+	// Many-to-One relationships are handled in templates:
+	// 1. Entity gets a foreign key property
+	// 2. Entity gets a navigation property to the target
+	// 3. DTOs include navigation data
+	// 4. Services include methods to load related data
+
+	// Ensure navigation property name is set
+	if rel.NavigationProperty == "" {
+		rel.NavigationProperty = rel.TargetEntity
+	}
+
+	// Ensure foreign key name is set
+	if rel.ForeignKeyName == "" {
+		rel.ForeignKeyName = rel.TargetEntity + "Id"
 	}
 
 	return nil
@@ -146,10 +202,21 @@ func (h *RelationshipHandler) ValidateRelationships(sch *schema.Schema) error {
 			continue
 		}
 
+		// Validate One-to-One relationships
+		for _, rel := range entity.Relations.OneToOne {
+			// Note: Target entity might not exist yet in the schema
+			_ = rel
+		}
+
 		// Validate One-to-Many relationships
 		for _, rel := range entity.Relations.OneToMany {
 			// Note: Target entity might not exist yet in the schema
 			// This is OK as it might be defined elsewhere or be a forward reference
+			_ = rel
+		}
+
+		// Validate Many-to-One relationships
+		for _, rel := range entity.Relations.ManyToOne {
 			_ = rel
 		}
 
