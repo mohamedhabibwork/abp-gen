@@ -1,5 +1,11 @@
 using System;
 using Volo.Abp.Application.Dtos;
+{{- if .HasEnumProperties}}
+{{- range .EnumNames}}
+using {{$.NamespaceRoot}}.Domain.Shared.{{$.ModuleNameWithSuffix}};
+{{- break}}
+{{- end}}
+{{- end}}
 
 namespace {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module
 {

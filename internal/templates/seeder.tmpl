@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
 {{- if eq .PrimaryKeyType "Guid"}}
 using Volo.Abp.Guids;
 {{- end}}
@@ -13,7 +13,7 @@ using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
 
-namespace {{.NamespaceRoot}}.Domain.Data.{{.ModuleName}}Module
+namespace {{.NamespaceRoot}}.Domain.Data.{{.ModuleNameWithSuffix}}
 {
     public class {{.EntityName}}DataSeeder : IDataSeedContributor, ITransientDependency
     {

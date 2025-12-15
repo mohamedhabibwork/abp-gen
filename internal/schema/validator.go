@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -40,6 +41,11 @@ func (s *Schema) validateSolution() error {
 
 	if s.Solution.ModuleName == "" {
 		return fmt.Errorf("solution.moduleName is required")
+	}
+
+	// Set default ModuleSuffix to "Module" for backward compatibility
+	if s.Solution.ModuleSuffix == "" {
+		s.Solution.ModuleSuffix = "Module"
 	}
 
 	if s.Solution.NamespaceRoot == "" {
@@ -94,6 +100,17 @@ func (s *Schema) validateSolution() error {
 		return fmt.Errorf("solution.dbProvider must be 'efcore', 'mongodb', or 'both', got '%s'", s.Solution.DBProvider)
 	}
 
+	// Set default generation mode to "existing" for backward compatibility
+	if s.Solution.GenerationMode == "" {
+		s.Solution.GenerationMode = GenerationModeExisting
+	}
+
+	// Validate generation mode
+	validModes := map[GenerationMode]bool{GenerationModeExisting: true, GenerationModeNew: true}
+	if !validModes[s.Solution.GenerationMode] {
+		return fmt.Errorf("solution.generationMode must be 'existing' or 'new', got '%s'", s.Solution.GenerationMode)
+	}
+
 	// Validate multi-tenancy configuration
 	if s.Solution.MultiTenancy != nil {
 		if err := s.validateMultiTenancy(s.Solution.MultiTenancy); err != nil {
@@ -109,6 +126,23 @@ func (s *Schema) validateSolution() error {
 	validValidationTypes := map[string]bool{"fluentvalidation": true, "native": true}
 	if !validValidationTypes[s.Options.ValidationType] {
 		return fmt.Errorf("options.validationType must be 'fluentvalidation' or 'native', got '%s'", s.Options.ValidationType)
+	}
+
+	// Auto-detect mapping library based on ABP version if not set
+	if s.Options.MappingLibrary == "" {
+		// Parse ABP version to determine default mapping library
+		// ABP 10+ defaults to Mapperly, earlier versions use AutoMapper
+		if isABPVersion10OrHigher(s.Solution.ABPVersion) {
+			s.Options.MappingLibrary = "mapperly"
+		} else {
+			s.Options.MappingLibrary = "automapper"
+		}
+	}
+
+	// Validate mapping library
+	validMappingLibraries := map[string]bool{"automapper": true, "mapperly": true}
+	if !validMappingLibraries[s.Options.MappingLibrary] {
+		return fmt.Errorf("options.mappingLibrary must be 'automapper' or 'mapperly', got '%s'", s.Options.MappingLibrary)
 	}
 
 	// Validate localization merge configuration
@@ -354,4 +388,23 @@ func Pluralize(word string) string {
 		return word + "es"
 	}
 	return word + "s"
+}
+
+// isABPVersion10OrHigher checks if the ABP version is 10.0 or higher
+func isABPVersion10OrHigher(version string) bool {
+	// Remove any "v" prefix
+	version = strings.TrimPrefix(version, "v")
+
+	// Split by dot to get major version
+	parts := strings.Split(version, ".")
+	if len(parts) == 0 {
+		return false
+	}
+
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return false
+	}
+
+	return major >= 10
 }

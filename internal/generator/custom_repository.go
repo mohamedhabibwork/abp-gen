@@ -67,13 +67,14 @@ func (g *CustomRepositoryGenerator) generateInterface(sch *schema.Schema, entity
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"PrimaryKeyType":  primaryKeyType,
-		"Methods":         entity.CustomRepository.Methods,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Methods":              entity.CustomRepository.Methods,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -81,7 +82,7 @@ func (g *CustomRepositoryGenerator) generateInterface(sch *schema.Schema, entity
 		return fmt.Errorf("failed to execute repository_custom template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	repoPath := filepath.Join(paths.DomainRepositories, moduleFolder, "I"+entity.Name+"CustomRepository.cs")
 	return g.writer.WriteFile(repoPath, buf.String())
 }
@@ -99,13 +100,14 @@ func (g *CustomRepositoryGenerator) generateEFCoreImplementation(sch *schema.Sch
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"PrimaryKeyType":  primaryKeyType,
-		"Methods":         entity.CustomRepository.Methods,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Methods":              entity.CustomRepository.Methods,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -113,7 +115,7 @@ func (g *CustomRepositoryGenerator) generateEFCoreImplementation(sch *schema.Sch
 		return fmt.Errorf("failed to execute repository_impl_ef template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	repoPath := filepath.Join(paths.EFCoreRepositories, moduleFolder, entity.Name+"CustomRepository.cs")
 	return g.writer.WriteFile(repoPath, buf.String())
 }
@@ -131,13 +133,14 @@ func (g *CustomRepositoryGenerator) generateMongoDBImplementation(sch *schema.Sc
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"PrimaryKeyType":  primaryKeyType,
-		"Methods":         entity.CustomRepository.Methods,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Methods":              entity.CustomRepository.Methods,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -145,7 +148,7 @@ func (g *CustomRepositoryGenerator) generateMongoDBImplementation(sch *schema.Sc
 		return fmt.Errorf("failed to execute repository_impl_mongo template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	repoPath := filepath.Join(paths.MongoDBRepositories, moduleFolder, entity.Name+"CustomRepository.cs")
 	return g.writer.WriteFile(repoPath, buf.String())
 }

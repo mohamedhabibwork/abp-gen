@@ -160,10 +160,9 @@ func (p *LayerPaths) EnsureDirectories() error {
 	return nil
 }
 
-// EnsureModuleDirectories creates all necessary module-specific directories with "Module" prefix
-func (p *LayerPaths) EnsureModuleDirectories(moduleName string) error {
-	moduleFolder := moduleName + "Module"
-	
+// EnsureModuleDirectories creates all necessary module-specific directories
+// moduleFolder should be the full module folder name (e.g., "ProductModule", "IntegrationServiceModule")
+func (p *LayerPaths) EnsureModuleDirectories(moduleFolder string) error {
 	directories := []string{
 		filepath.Join(p.DomainEntities, moduleFolder),
 		filepath.Join(p.DomainRepositories, moduleFolder),
@@ -220,19 +219,21 @@ func (p *LayerPaths) GetIDbContextPath(serviceName string) string {
 }
 
 // GetPermissionsFilePath returns the path to the permissions file
-func (p *LayerPaths) GetPermissionsFilePath(moduleName string) string {
+// moduleFolder should be the full module folder name (e.g., "ProductModule", "IntegrationServiceModule")
+// moduleName should be the base module name (e.g., "Product", "IntegrationService")
+func (p *LayerPaths) GetPermissionsFilePath(moduleFolder, moduleName string) string {
 	if p.ContractsPermissions == "" {
 		return ""
 	}
-	moduleFolder := moduleName + "Module"
 	return filepath.Join(p.ContractsPermissions, moduleFolder, moduleName+"Permissions.cs")
 }
 
 // GetPermissionProviderPath returns the path to the permission provider file
-func (p *LayerPaths) GetPermissionProviderPath(moduleName string) string {
+// moduleFolder should be the full module folder name (e.g., "ProductModule", "IntegrationServiceModule")
+// moduleName should be the base module name (e.g., "Product", "IntegrationService")
+func (p *LayerPaths) GetPermissionProviderPath(moduleFolder, moduleName string) string {
 	if p.ContractsPermissions == "" {
 		return ""
 	}
-	moduleFolder := moduleName + "Module"
 	return filepath.Join(p.ContractsPermissions, moduleFolder, moduleName+"PermissionDefinitionProvider.cs")
 }

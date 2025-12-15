@@ -1,6 +1,14 @@
 using System;
+{{- if .NeedsDataAnnotations}}
 using System.ComponentModel.DataAnnotations;
-using {{.NamespaceRoot}}.Constants.{{.ModuleName}}Module;
+{{- end}}
+using {{.NamespaceRoot}}.Constants.{{.ModuleNameWithSuffix}};
+{{- if .HasEnumProperties}}
+{{- range .EnumNames}}
+using {{$.NamespaceRoot}}.Domain.Shared.{{$.ModuleNameWithSuffix}};
+{{- break}}
+{{- end}}
+{{- end}}
 
 namespace {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module
 {

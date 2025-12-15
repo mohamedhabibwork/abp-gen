@@ -32,6 +32,11 @@ func (g *EFCoreGenerator) Generate(sch *schema.Schema, entity *schema.Entity, pa
 		return nil
 	}
 
+	// Generate DbProperties (only once per module, but we'll generate it idempotently for each entity)
+	if err := g.GenerateDbProperties(sch, paths); err != nil {
+		return err
+	}
+
 	// Generate entity configuration
 	if err := g.GenerateConfiguration(sch, entity, paths); err != nil {
 		return err
@@ -56,6 +61,30 @@ func (g *EFCoreGenerator) Generate(sch *schema.Schema, entity *schema.Entity, pa
 	return g.UpdateIDbContext(sch, entity, paths)
 }
 
+// GenerateDbProperties generates the DbProperties class for the module
+func (g *EFCoreGenerator) GenerateDbProperties(sch *schema.Schema, paths *detector.LayerPaths) error {
+	tmpl, err := g.tmplLoader.Load("db_properties.tmpl")
+	if err != nil {
+		return fmt.Errorf("failed to load db properties template: %w", err)
+	}
+
+	data := map[string]interface{}{
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("failed to execute db properties template: %w", err)
+	}
+
+	moduleFolder := sch.Solution.GetModuleFolderName()
+	filePath := filepath.Join(paths.DomainSharedConstants, moduleFolder, sch.Solution.ModuleName+"DbProperties.cs")
+	return g.writer.WriteFile(filePath, buf.String())
+}
+
 // GenerateConfiguration generates EF Core entity configuration
 func (g *EFCoreGenerator) GenerateConfiguration(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("efcore_config.tmpl")
@@ -64,15 +93,16 @@ func (g *EFCoreGenerator) GenerateConfiguration(sch *schema.Schema, entity *sche
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":        sch.Solution.Name,
-		"ModuleName":          sch.Solution.ModuleName,
-		"NamespaceRoot":       sch.Solution.NamespaceRoot,
-		"EntityName":          entity.Name,
-		"TableName":           entity.TableName,
-		"Properties":          entity.Properties,
-		"HasRelations":        entity.HasRelations(),
-		"OneToManyRelations":  getOneToManyRelations(entity),
-		"ManyToManyRelations": getManyToManyRelations(entity),
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"TableName":            entity.TableName,
+		"Properties":           entity.Properties,
+		"HasRelations":         entity.HasRelations(),
+		"OneToManyRelations":   getOneToManyRelations(entity),
+		"ManyToManyRelations":  getManyToManyRelations(entity),
 	}
 
 	var buf bytes.Buffer
@@ -80,7 +110,7 @@ func (g *EFCoreGenerator) GenerateConfiguration(sch *schema.Schema, entity *sche
 		return fmt.Errorf("failed to execute EF Core config template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.EFCoreConfigurations, moduleFolder, entity.Name+"Configuration.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -95,11 +125,12 @@ func (g *EFCoreGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"PrimaryKeyType": primaryKeyType,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
 	}
 
 	var buf bytes.Buffer
@@ -107,7 +138,7 @@ func (g *EFCoreGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 		return fmt.Errorf("failed to execute EF Core repository template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.EFCoreRepositories, moduleFolder, "EfCore"+entity.Name+"Repository.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -128,12 +159,12 @@ func (g *EFCoreGenerator) UpdateDbContext(sch *schema.Schema, entity *schema.Ent
 		moduleName := sch.Solution.ModuleName
 
 		// Build initial DbContext file structure
-		moduleNamespace := moduleName + "Module"
+		moduleNamespace := sch.Solution.GetModuleNameWithSuffix()
 		content := fmt.Sprintf(`using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using %s.EntityFrameworkCore.Configurations.%s;
-using %s.Domain.Entities.%sModule;
+using %s.Domain.Entities.%s;
 namespace %s.EntityFrameworkCore
 {
     [ConnectionStringName("%s")]
@@ -158,7 +189,7 @@ namespace %s.EntityFrameworkCore
         }
     }
 }
-`, namespaceRoot, moduleNamespace, namespaceRoot, moduleName, namespaceRoot, moduleName, moduleName, moduleName, dbSetProperty, moduleName, moduleName, entity.Name)
+`, namespaceRoot, moduleNamespace, namespaceRoot, moduleNamespace, namespaceRoot, moduleName, moduleName, moduleName, dbSetProperty, moduleName, moduleName, entity.Name)
 		return content, nil
 	}
 
@@ -188,11 +219,12 @@ func (g *EFCoreGenerator) UpdateIDbContext(sch *schema.Schema, entity *schema.En
 	createInitialContent := func() (string, error) {
 		namespaceRoot := sch.Solution.NamespaceRoot
 		moduleName := sch.Solution.ModuleName
+		moduleNamespace := sch.Solution.GetModuleNameWithSuffix()
 
 		// Build initial IDbContext file structure
 		content := fmt.Sprintf(`using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
-using %s.Domain.Entities.%sModule;
+using %s.Domain.Entities.%s;
 
 namespace %s.EntityFrameworkCore
 {
@@ -203,7 +235,7 @@ namespace %s.EntityFrameworkCore
          */
 %s    }
 }
-`, namespaceRoot, moduleName, namespaceRoot, moduleName, dbSetProperty)
+`, namespaceRoot, moduleNamespace, namespaceRoot, moduleName, dbSetProperty)
 		return content, nil
 	}
 

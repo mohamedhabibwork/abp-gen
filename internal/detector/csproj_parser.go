@@ -208,3 +208,63 @@ func ScanProjectsForVersions(info *SolutionInfo) (abpVersion, dotnetVersion stri
 
 	return
 }
+
+// ExtractRootNamespace extracts the RootNamespace property from a .csproj file
+func ExtractRootNamespace(csprojPath string) string {
+	data, err := os.ReadFile(csprojPath)
+	if err != nil {
+		return ""
+	}
+
+	var project CsprojProject
+	if err := xml.Unmarshal(data, &project); err != nil {
+		return ""
+	}
+
+	// Look for RootNamespace in PropertyGroup
+	for _, propGroup := range project.PropertyGroup {
+		if propGroup.RootNamespace != "" {
+			return propGroup.RootNamespace
+		}
+	}
+
+	return ""
+}
+
+// ExtractNamespaceFromSourceFiles extracts namespace from C# source files in a directory
+func ExtractNamespaceFromSourceFiles(directory string) string {
+	namespaceRegex := regexp.MustCompile(`^\s*namespace\s+([\w.]+)`)
+	var foundNamespace string
+	
+	// Look for .cs files in the directory
+	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		if err != nil || foundNamespace != "" {
+			return nil // Skip errors or if already found
+		}
+		
+		// Only check .cs files in the root directory (not subdirectories)
+		if !info.IsDir() && strings.HasSuffix(path, ".cs") {
+			if filepath.Dir(path) != directory {
+				return nil // Skip subdirectories
+			}
+			
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+			
+			lines := strings.Split(string(data), "\n")
+			for _, line := range lines {
+				matches := namespaceRegex.FindStringSubmatch(line)
+				if len(matches) > 1 {
+					foundNamespace = matches[1]
+					return filepath.SkipAll // Stop walking once found
+				}
+			}
+		}
+		
+		return nil
+	})
+	
+	return foundNamespace
+}

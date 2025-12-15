@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Volo.Abp.EntityFrameworkCore.Modeling;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Domain.Shared.{{.ModuleNameWithSuffix}};
 
-namespace {{.NamespaceRoot}}.EntityFrameworkCore.Configurations.{{.ModuleName}}Module;
+namespace {{.NamespaceRoot}}.EntityFrameworkCore.Configurations.{{.ModuleNameWithSuffix}};
 
 public class {{.EntityName}}Configuration : IEntityTypeConfiguration<{{.EntityName}}>
 {

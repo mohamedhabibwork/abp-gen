@@ -196,6 +196,7 @@ The schema is a JSON file that describes your entities, relationships, and gener
 | `moduleName` | string | Module/Service name | Required |
 | `namespaceRoot` | string | Root namespace | `{name}.{moduleName}` |
 | `abpVersion` | string | ABP Framework version | `"9.0"` |
+| `generationMode` | string | Generation mode: `"existing"` (integrate into existing solution) or `"new"` (create new solution first) | `"existing"` |
 | `primaryKeyType` | string | Primary key type: `Guid`, `long`, or `configurable` | `"Guid"` |
 | `dbProvider` | string | Database provider: `efcore`, `mongodb`, or `both` | `"efcore"` |
 | `generateControllers` | boolean | Generate HTTP API controllers | `true` |
@@ -283,6 +284,7 @@ For each entity, the generator creates:
 - `Data/{EntityName}DataSeeder.cs` - Data seeder
 
 ### Domain.Shared Layer
+- `Constants/{ModuleName}DbProperties.cs` - Database properties (table prefix, schema) for EF Core
 - `Constants/{EntityName}Constants.cs` - Entity constants
 - `Events/{EntityName}EtoTypes.cs` - Event type constants
 - `Events/{EntityName}Eto.cs` - Event Transfer Object
@@ -302,7 +304,8 @@ For each entity, the generator creates:
 - `EventHandlers/{EntityName}CreatedEventHandler.cs` - Created event handler (if event handlers enabled)
 - `EventHandlers/{EntityName}UpdatedEventHandler.cs` - Updated event handler (if event handlers enabled)
 - `EventHandlers/{EntityName}DeletedEventHandler.cs` - Deleted event handler (if event handlers enabled)
-- `AutoMapper/{EntityName}Profile.cs` - AutoMapper profile
+- `AutoMapper/{EntityName}Profile.cs` - AutoMapper profile (if mappingLibrary is "automapper")
+- `Mapperly/{EntityName}Mapper.cs` - Mapperly mapper (if mappingLibrary is "mapperly" or ABP 10+)
 
 ### HttpApi Layer
 - `Controllers/{EntityName}Controller.cs` - API controller (if enabled)
@@ -318,6 +321,51 @@ For each entity, the generator creates:
 - `MongoDB/{EntityName}MongoDbConfiguration.cs` - MongoDB configuration
 
 ## Key Features Explained
+
+### Generation Modes
+
+The `generationMode` option controls how the generator interacts with your solution:
+
+- **`"existing"`** (default): Integrates code into an existing ABP solution. The generator will detect the solution structure and add files to the appropriate projects.
+- **`"new"`**: Creates a new ABP solution first using the ABP CLI or .NET CLI, then generates code into it. Useful for starting fresh projects.
+
+**Example:**
+```json
+{
+  "solution": {
+    "generationMode": "new",
+    "name": "MyCompany",
+    "moduleName": "ProductService"
+  }
+}
+```
+
+### Object-to-Object Mapping
+
+The generator supports two mapping libraries:
+
+- **AutoMapper** (default for ABP 8/9): Traditional AutoMapper profiles
+- **Mapperly** (default for ABP 10+): Source generator-based mapping for better performance
+
+The `mappingLibrary` option in the schema controls which library to use. If not specified, it auto-detects based on ABP version (Mapperly for ABP 10+, AutoMapper for earlier versions).
+
+**Example:**
+```json
+{
+  "options": {
+    "mappingLibrary": "mapperly"
+  }
+}
+```
+
+### Automatic Using Directives
+
+The generator automatically adds required `using` statements based on the code being generated:
+
+- Enum namespaces are added when entities have enum properties
+- `FluentValidation` namespace is added when validators are generated
+- `System.ComponentModel.DataAnnotations` is added when DataAnnotations are used
+- Permission namespaces are correctly constructed based on module structure
 
 ### Domain Managers
 

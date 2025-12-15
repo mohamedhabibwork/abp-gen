@@ -43,7 +43,7 @@ func (g *EntityGenerator) Generate(sch *schema.Schema, entity *schema.Entity, pa
 	}
 
 	// Write file
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	entityPath := filepath.Join(paths.DomainEntities, moduleFolder, entity.Name+".cs")
 	return g.writer.WriteFile(entityPath, buf.String())
 }
@@ -55,6 +55,7 @@ func (g *EntityGenerator) prepareEntityData(sch *schema.Schema, entity *schema.E
 	return map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"TableName":               entity.TableName,
@@ -89,11 +90,12 @@ func (g *EntityGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"PrimaryKeyType": primaryKeyType,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
 	}
 
 	// Execute template
@@ -103,7 +105,7 @@ func (g *EntityGenerator) GenerateRepository(sch *schema.Schema, entity *schema.
 	}
 
 	// Write file
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	repoPath := filepath.Join(paths.DomainRepositories, moduleFolder, "I"+entity.Name+"Repository.cs")
 	return g.writer.WriteFile(repoPath, buf.String())
 }
@@ -125,11 +127,12 @@ func (g *EntityGenerator) GenerateConstants(sch *schema.Schema, entity *schema.E
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":        sch.Solution.Name,
-		"ModuleName":          sch.Solution.ModuleName,
-		"NamespaceRoot":       sch.Solution.NamespaceRoot,
-		"EntityName":          entity.Name,
-		"ValidationConstants": validationConstants,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"ValidationConstants":  validationConstants,
 	}
 
 	// Execute template
@@ -139,7 +142,7 @@ func (g *EntityGenerator) GenerateConstants(sch *schema.Schema, entity *schema.E
 	}
 
 	// Write file
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	constantsPath := filepath.Join(paths.DomainSharedConstants, moduleFolder, entity.Name+"Constants.cs")
 	return g.writer.WriteFile(constantsPath, buf.String())
 }
@@ -166,10 +169,11 @@ func (g *EntityGenerator) generateEventTypes(sch *schema.Schema, entity *schema.
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":  sch.Solution.Name,
-		"ModuleName":    sch.Solution.ModuleName,
-		"NamespaceRoot": sch.Solution.NamespaceRoot,
-		"EntityName":    entity.Name,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
 	}
 
 	var buf bytes.Buffer
@@ -177,7 +181,7 @@ func (g *EntityGenerator) generateEventTypes(sch *schema.Schema, entity *schema.
 		return fmt.Errorf("failed to execute event types template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	eventTypesPath := filepath.Join(paths.DomainSharedEvents, moduleFolder, entity.Name+"EtoTypes.cs")
 	return g.writer.WriteFile(eventTypesPath, buf.String())
 }
@@ -191,12 +195,13 @@ func (g *EntityGenerator) generateETO(sch *schema.Schema, entity *schema.Entity,
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"PrimaryKeyType": primaryKeyType,
-		"Properties":     entity.Properties,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Properties":           entity.Properties,
 	}
 
 	var buf bytes.Buffer
@@ -204,7 +209,7 @@ func (g *EntityGenerator) generateETO(sch *schema.Schema, entity *schema.Entity,
 		return fmt.Errorf("failed to execute ETO template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	etoPath := filepath.Join(paths.DomainSharedEvents, moduleFolder, entity.Name+"Eto.cs")
 	return g.writer.WriteFile(etoPath, buf.String())
 }
@@ -225,6 +230,7 @@ func (g *EntityGenerator) GenerateDataSeeder(sch *schema.Schema, entity *schema.
 	data := map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"PrimaryKeyType":          primaryKeyType,
@@ -236,7 +242,7 @@ func (g *EntityGenerator) GenerateDataSeeder(sch *schema.Schema, entity *schema.
 		return fmt.Errorf("failed to execute seeder template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	seederPath := filepath.Join(paths.DomainData, moduleFolder, entity.Name+"DataSeeder.cs")
 	return g.writer.WriteFile(seederPath, buf.String())
 }

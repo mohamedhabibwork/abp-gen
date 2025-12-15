@@ -27,17 +27,28 @@ const (
 	TargetAuto              TargetFramework = "auto" // Auto-detect
 )
 
+// GenerationMode represents the generation mode
+type GenerationMode string
+
+const (
+	GenerationModeExisting GenerationMode = "existing" // Generate into existing solution
+	GenerationModeNew      GenerationMode = "new"      // Create new solution first
+)
+
 // Solution represents solution-level configuration
 type Solution struct {
 	Name                string          `json:"name"`
 	ModuleName          string          `json:"moduleName"`
 	NamespaceRoot       string          `json:"namespaceRoot"`
+	ModuleSuffix        string          `json:"moduleSuffix,omitempty"` // Optional suffix for module (e.g., "Module", "Service", or empty)
+	FolderPrefix        string          `json:"folderPrefix,omitempty"` // Optional prefix for folder names
 	ABPVersion          string          `json:"abpVersion"`
 	TargetFramework     TargetFramework `json:"targetFramework"` // Target framework type
 	PrimaryKeyType      string          `json:"primaryKeyType"`  // "Guid" or "long" or "configurable"
 	DBProvider          string          `json:"dbProvider"`      // "efcore" or "mongodb" or "both"
 	GenerateControllers bool            `json:"generateControllers"`
-	MultiTenancy        *MultiTenancy   `json:"multiTenancy,omitempty"` // Multi-tenancy configuration
+	MultiTenancy        *MultiTenancy   `json:"multiTenancy,omitempty"`   // Multi-tenancy configuration
+	GenerationMode      GenerationMode  `json:"generationMode,omitempty"` // "existing" or "new" - defaults to "existing"
 }
 
 // Entity represents a domain entity
@@ -125,7 +136,8 @@ type Options struct {
 	UseExtraProperties       bool               `json:"useExtraProperties"`
 	UseLocalization          bool               `json:"useLocalization"`
 	LocalizationCultures     []string           `json:"localizationCultures"`
-	ValidationType           string             `json:"validationType"` // "fluentvalidation" or "native"
+	ValidationType           string             `json:"validationType"`           // "fluentvalidation" or "native"
+	MappingLibrary           string             `json:"mappingLibrary,omitempty"` // "automapper" or "mapperly" - auto-detected based on ABP version if not set
 	GenerateEventHandlers    bool               `json:"generateEventHandlers"`
 	GenerateIntegrationTests bool               `json:"generateIntegrationTests"`
 	LocalizationMerge        *LocalizationMerge `json:"localizationMerge,omitempty"` // Localization merging options
@@ -197,6 +209,87 @@ func (e *Entity) GetForeignKeyProperties() []Property {
 func (e *Entity) HasRelations() bool {
 	return e.Relations != nil && (len(e.Relations.OneToOne) > 0 || len(e.Relations.OneToMany) > 0 ||
 		len(e.Relations.ManyToOne) > 0 || len(e.Relations.ManyToMany) > 0)
+}
+
+// HasEnumProperties checks if entity has any enum properties
+func (e *Entity) HasEnumProperties() bool {
+	for _, prop := range e.Properties {
+		if prop.IsEnum && prop.EnumName != "" {
+			return true
+		}
+	}
+	// Also check if entity has enums defined
+	return len(e.Enums) > 0
+}
+
+// GetEnumNames returns a list of unique enum names used by this entity
+func (e *Entity) GetEnumNames() []string {
+	enumMap := make(map[string]bool)
+
+	// Add enums from properties
+	for _, prop := range e.Properties {
+		if prop.IsEnum && prop.EnumName != "" {
+			enumMap[prop.EnumName] = true
+		}
+	}
+
+	// Add enums defined on the entity
+	for _, enum := range e.Enums {
+		enumMap[enum.Name] = true
+	}
+
+	result := make([]string, 0, len(enumMap))
+	for name := range enumMap {
+		result = append(result, name)
+	}
+	return result
+}
+
+// NeedsFluentValidation checks if entity needs FluentValidation using statements
+func (e *Entity) NeedsFluentValidation() bool {
+	// FluentValidation is needed if validation type is fluentvalidation
+	// This will be checked at the schema level, but we can also check if there are validation rules
+	for _, prop := range e.Properties {
+		if len(prop.ValidationRules) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// NeedsDataAnnotations checks if entity needs System.ComponentModel.DataAnnotations using statements
+func (e *Entity) NeedsDataAnnotations() bool {
+	// DataAnnotations are needed for DTOs with validation attributes
+	for _, prop := range e.Properties {
+		if prop.IsRequired || prop.MaxLength > 0 || prop.MinLength > 0 || len(prop.ValidationRules) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// GetModuleFolderName returns the module folder name with optional prefix and suffix
+// Format: [FolderPrefix]ModuleName[ModuleSuffix]
+// Example: "MyProductModule" or "ProductService" or "Product"
+func (s *Solution) GetModuleFolderName() string {
+	result := s.ModuleName
+	if s.FolderPrefix != "" {
+		result = s.FolderPrefix + result
+	}
+	if s.ModuleSuffix != "" {
+		result = result + s.ModuleSuffix
+	}
+	return result
+}
+
+// GetModuleNameWithSuffix returns the module name with suffix for use in templates
+// Format: ModuleName[ModuleSuffix]
+// Example: "ProductModule" or "ProductService" or "Product"
+func (s *Solution) GetModuleNameWithSuffix() string {
+	if s.ModuleSuffix != "" {
+		return s.ModuleName + s.ModuleSuffix
+	}
+	return s.ModuleName
 }
 
 // MultiTenancy represents multi-tenancy configuration

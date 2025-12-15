@@ -1,15 +1,15 @@
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Services;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
-using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleNameWithSuffix}};
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Validation;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
-namespace {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}}Module
+namespace {{.NamespaceRoot}}.Domain.Managers.{{.ModuleNameWithSuffix}}
 {
     public class {{.EntityName}}Manager : DomainService
     {

@@ -72,15 +72,16 @@ func (g *EnumGenerator) generateEnumClass(sch *schema.Schema, entity *schema.Ent
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"EnumName":        enum.Name,
-		"UnderlyingType":  enum.UnderlyingType,
-		"Values":          enum.Values,
-		"Description":     enum.Description,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EnumName":             enum.Name,
+		"UnderlyingType":       enum.UnderlyingType,
+		"Values":               enum.Values,
+		"Description":          enum.Description,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -88,7 +89,7 @@ func (g *EnumGenerator) generateEnumClass(sch *schema.Schema, entity *schema.Ent
 		return fmt.Errorf("failed to execute enum template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	enumPath := filepath.Join(paths.DomainSharedEnums, moduleFolder, enum.Name+".cs")
 	return g.writer.WriteFile(enumPath, buf.String())
 }
@@ -104,13 +105,14 @@ func (g *EnumGenerator) generateEnumLookup(sch *schema.Schema, entity *schema.En
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"EnumName":        enum.Name,
-		"Values":          enum.Values,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EnumName":             enum.Name,
+		"Values":               enum.Values,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -118,7 +120,7 @@ func (g *EnumGenerator) generateEnumLookup(sch *schema.Schema, entity *schema.En
 		return fmt.Errorf("failed to execute enum_lookup template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	lookupPath := filepath.Join(paths.DomainSharedEnums, moduleFolder, enum.Name+"Extensions.cs")
 	return g.writer.WriteFile(lookupPath, buf.String())
 }
@@ -134,14 +136,15 @@ func (g *EnumGenerator) generateEnumLocalization(sch *schema.Schema, entity *sch
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"EnumName":        enum.Name,
-		"Values":          enum.Values,
-		"Cultures":        sch.Options.LocalizationCultures,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EnumName":             enum.Name,
+		"Values":               enum.Values,
+		"Cultures":             sch.Options.LocalizationCultures,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -150,7 +153,7 @@ func (g *EnumGenerator) generateEnumLocalization(sch *schema.Schema, entity *sch
 	}
 
 	// Generate JSON content for localization files
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	locPath := filepath.Join(paths.DomainSharedLocalization, moduleFolder, enum.Name+"_enums.json")
 	return g.writer.WriteFile(locPath, buf.String())
 }
@@ -166,14 +169,15 @@ func (g *EnumGenerator) generateEnumDTO(sch *schema.Schema, entity *schema.Entit
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"EnumName":        enum.Name,
-		"UnderlyingType":  enum.UnderlyingType,
-		"Values":          enum.Values,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EnumName":             enum.Name,
+		"UnderlyingType":       enum.UnderlyingType,
+		"Values":               enum.Values,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -181,7 +185,7 @@ func (g *EnumGenerator) generateEnumDTO(sch *schema.Schema, entity *schema.Entit
 		return fmt.Errorf("failed to execute enum_dto template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	dtoPath := filepath.Join(paths.ContractsDTOs, moduleFolder, entity.Name, enum.Name+"Dto.cs")
 	return g.writer.WriteFile(dtoPath, buf.String())
 }

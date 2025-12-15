@@ -1,0 +1,31 @@
+using Riok.Mapperly.Abstractions;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module;
+{{- if .HasEvents}}
+using {{.NamespaceRoot}}.Events.{{.ModuleNameWithSuffix}};
+{{- end}}
+
+namespace {{.NamespaceRoot}}.Application.Mapperly.{{.ModuleNameWithSuffix}}
+{
+    [Mapper]
+    public partial class {{.EntityName}}Mapper
+    {
+        public partial {{.EntityName}}Dto Map({{.EntityName}} source);
+
+        public partial void Map({{.EntityName}} source, {{.EntityName}}Dto destination);
+
+{{- if not .IsValueObject}}
+        public partial {{.EntityName}} Map(Create{{.EntityName}}Dto source);
+
+        public partial void Map(Create{{.EntityName}}Dto source, {{.EntityName}} destination);
+
+        public partial {{.EntityName}} Map(Update{{.EntityName}}Dto source);
+
+        public partial void Map(Update{{.EntityName}}Dto source, {{.EntityName}} destination);
+{{- end}}
+{{- if .HasEvents}}
+        public partial {{.EntityName}}Eto MapToEto({{.EntityName}} source);
+{{- end}}
+    }
+}
+

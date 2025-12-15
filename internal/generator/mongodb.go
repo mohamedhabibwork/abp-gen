@@ -44,11 +44,12 @@ func (g *MongoDBGenerator) GenerateRepository(sch *schema.Schema, entity *schema
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"PrimaryKeyType": primaryKeyType,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
 	}
 
 	var buf bytes.Buffer
@@ -56,7 +57,7 @@ func (g *MongoDBGenerator) GenerateRepository(sch *schema.Schema, entity *schema
 		return fmt.Errorf("failed to execute MongoDB repository template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.MongoDBRepositories, moduleFolder, "Mongo"+entity.Name+"Repository.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -69,11 +70,12 @@ func (g *MongoDBGenerator) GenerateConfiguration(sch *schema.Schema, entity *sch
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":  sch.Solution.Name,
-		"ModuleName":    sch.Solution.ModuleName,
-		"NamespaceRoot": sch.Solution.NamespaceRoot,
-		"EntityName":    entity.Name,
-		"TableName":     entity.TableName,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"TableName":            entity.TableName,
 	}
 
 	var buf bytes.Buffer
@@ -83,7 +85,7 @@ func (g *MongoDBGenerator) GenerateConfiguration(sch *schema.Schema, entity *sch
 
 	// MongoDB configurations are typically in a different location
 	// Adjust path as needed based on ABP MongoDB structure
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	configPath := filepath.Join(paths.MongoDB, "MongoDB", moduleFolder, entity.Name+"MongoDbConfiguration.cs")
 	return g.writer.WriteFile(configPath, buf.String())
 }

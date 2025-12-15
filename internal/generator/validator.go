@@ -38,7 +38,7 @@ func (g *ValidatorGenerator) Generate(sch *schema.Schema, entity *schema.Entity,
 	}
 
 	// Ensure validators directory exists
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	validatorsPath := filepath.Join(paths.Application, "Validators", moduleFolder)
 	if err := os.MkdirAll(validatorsPath, 0755); err != nil {
 		return fmt.Errorf("failed to create validators directory: %w", err)
@@ -67,7 +67,7 @@ func (g *ValidatorGenerator) GenerateCreateValidator(sch *schema.Schema, entity 
 		return fmt.Errorf("failed to execute create validator template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	validatorsPath := filepath.Join(paths.Application, "Validators", moduleFolder)
 	filePath := filepath.Join(validatorsPath, "Create"+entity.Name+"DtoValidator.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -87,7 +87,7 @@ func (g *ValidatorGenerator) GenerateUpdateValidator(sch *schema.Schema, entity 
 		return fmt.Errorf("failed to execute update validator template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	validatorsPath := filepath.Join(paths.Application, "Validators", moduleFolder)
 	filePath := filepath.Join(validatorsPath, "Update"+entity.Name+"DtoValidator.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -98,6 +98,7 @@ func (g *ValidatorGenerator) prepareValidatorData(sch *schema.Schema, entity *sc
 	return map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"Properties":              entity.Properties,

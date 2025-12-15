@@ -109,12 +109,13 @@ func (g *IntegrationTestGenerator) generateTestBase(sch *schema.Schema, paths *d
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"TargetFramework": sch.Solution.TargetFramework,
-		"DBProvider":      sch.Solution.DBProvider,
-		"MultiTenancy":    sch.Solution.MultiTenancy,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"TargetFramework":      sch.Solution.TargetFramework,
+		"DBProvider":           sch.Solution.DBProvider,
+		"MultiTenancy":         sch.Solution.MultiTenancy,
 	}
 
 	var buf bytes.Buffer
@@ -137,15 +138,16 @@ func (g *IntegrationTestGenerator) generateRepositoryTests(sch *schema.Schema, e
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":     sch.Solution.Name,
-		"ModuleName":       sch.Solution.ModuleName,
-		"NamespaceRoot":    sch.Solution.NamespaceRoot,
-		"EntityName":       entity.Name,
-		"PrimaryKeyType":   primaryKeyType,
-		"Properties":       entity.Properties,
-		"TargetFramework":  sch.Solution.TargetFramework,
-		"CustomRepository": entity.CustomRepository,
-		"Relations":        entity.Relations,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Properties":           entity.Properties,
+		"TargetFramework":      sch.Solution.TargetFramework,
+		"CustomRepository":     entity.CustomRepository,
+		"Relations":            entity.Relations,
 	}
 
 	var buf bytes.Buffer
@@ -154,7 +156,7 @@ func (g *IntegrationTestGenerator) generateRepositoryTests(sch *schema.Schema, e
 	}
 
 	testPath := g.getTestProjectPath(paths, sch)
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	repoTestPath := filepath.Join(testPath, "Repositories", moduleFolder, entity.Name+"RepositoryTests.cs")
 	return g.writer.WriteFile(repoTestPath, buf.String())
 }
@@ -168,14 +170,15 @@ func (g *IntegrationTestGenerator) generateServiceTests(sch *schema.Schema, enti
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"PrimaryKeyType":  primaryKeyType,
-		"Properties":      entity.Properties,
-		"TargetFramework": sch.Solution.TargetFramework,
-		"Relations":       entity.Relations,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Properties":           entity.Properties,
+		"TargetFramework":      sch.Solution.TargetFramework,
+		"Relations":            entity.Relations,
 	}
 
 	var buf bytes.Buffer
@@ -184,7 +187,7 @@ func (g *IntegrationTestGenerator) generateServiceTests(sch *schema.Schema, enti
 	}
 
 	testPath := g.getTestProjectPath(paths, sch)
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	serviceTestPath := filepath.Join(testPath, "Services", moduleFolder, entity.Name+"ServiceTests.cs")
 	return g.writer.WriteFile(serviceTestPath, buf.String())
 }
@@ -198,15 +201,16 @@ func (g *IntegrationTestGenerator) generateDomainTests(sch *schema.Schema, entit
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"PrimaryKeyType":  primaryKeyType,
-		"Properties":      entity.Properties,
-		"TargetFramework": sch.Solution.TargetFramework,
-		"DomainEvents":    entity.DomainEvents,
-		"Manager":         entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
+		"Properties":           entity.Properties,
+		"TargetFramework":      sch.Solution.TargetFramework,
+		"DomainEvents":         entity.DomainEvents,
+		"Manager":              entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
 	}
 
 	var buf bytes.Buffer
@@ -215,7 +219,7 @@ func (g *IntegrationTestGenerator) generateDomainTests(sch *schema.Schema, entit
 	}
 
 	testPath := g.getTestProjectPath(paths, sch)
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	domainTestPath := filepath.Join(testPath, "Domain", moduleFolder, entity.Name+"Tests.cs")
 	return g.writer.WriteFile(domainTestPath, buf.String())
 }

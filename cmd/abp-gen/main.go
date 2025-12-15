@@ -47,6 +47,7 @@ var (
 	schemaPrimaryKeyType      string
 	schemaDBProvider          string
 	schemaGenerateControllers bool
+	schemaGenerationMode      string
 )
 
 func main() {
@@ -151,6 +152,7 @@ func init() {
 	generateCmd.Flags().StringVar(&schemaPrimaryKeyType, "primaryKeyType", "", "primary key type: Guid or long (overrides schema)")
 	generateCmd.Flags().StringVar(&schemaDBProvider, "dbProvider", "", "database provider: efcore, mongodb, or both (overrides schema)")
 	generateCmd.Flags().BoolVar(&schemaGenerateControllers, "generateControllers", false, "generate controllers (overrides schema)")
+	generateCmd.Flags().StringVar(&schemaGenerationMode, "generationMode", "", "generation mode: existing or new (overrides schema)")
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(generateCmd)
@@ -255,28 +257,107 @@ func detectAndPromptMissingFields(sch *schema.Schema, solutionInfo *detector.Sol
 		}
 	}
 
+	// Prompt for module suffix (optional, defaults to "Module")
+	if sch.Solution.ModuleSuffix == "" {
+		fmt.Print("Enter module suffix (e.g., 'Module', 'Service', or leave empty for none) [default: Module]: ")
+		var suffixInput string
+		fmt.Scanln(&suffixInput)
+		if suffixInput == "" {
+			sch.Solution.ModuleSuffix = "Module" // Default for backward compatibility
+		} else {
+			sch.Solution.ModuleSuffix = suffixInput
+		}
+	}
+
+	// Prompt for folder prefix (optional)
+	if sch.Solution.FolderPrefix == "" {
+		fmt.Print("Enter folder prefix (optional, leave empty for none): ")
+		var prefixInput string
+		fmt.Scanln(&prefixInput)
+		sch.Solution.FolderPrefix = prefixInput
+	}
+
 	// Detect namespace root (defaults to solution name, but can be detected from projects)
 	if sch.Solution.NamespaceRoot == "" {
-		// Will be set to Solution.Name in validator, but we can try to detect from projects
+		detectedNamespaceRoot := ""
+
 		if solutionInfo != nil && len(solutionInfo.Projects) > 0 {
-			// Try to extract namespace from first project
+			// Try multiple detection strategies
+			namespaceCandidates := make(map[string]int)
+
+			// Strategy 1: Extract from project names
 			for _, project := range solutionInfo.Projects {
 				projectName := project.Name
-				// If project name contains dots, extract namespace root
 				if strings.Contains(projectName, ".") {
 					parts := strings.Split(projectName, ".")
 					if len(parts) >= 2 {
-						// Take first part as namespace root
 						candidate := parts[0]
 						if candidate != "" && candidate != sch.Solution.Name {
-							sch.Solution.NamespaceRoot = candidate
-							if verbose {
-								fmt.Printf("✓ Auto-detected namespace root from project: %s\n", candidate)
-							}
-							break
+							namespaceCandidates[candidate]++
 						}
 					}
 				}
+			}
+
+			// Strategy 2: Extract from .csproj RootNamespace property
+			for _, project := range solutionInfo.Projects {
+				if project.Path != "" {
+					rootNamespace := detector.ExtractRootNamespace(project.Path)
+					if rootNamespace != "" {
+						// Extract root part (before first dot)
+						if strings.Contains(rootNamespace, ".") {
+							parts := strings.Split(rootNamespace, ".")
+							if len(parts) > 0 {
+								candidate := parts[0]
+								if candidate != "" && candidate != sch.Solution.Name {
+									namespaceCandidates[candidate]++
+								}
+							}
+						} else {
+							if rootNamespace != "" && rootNamespace != sch.Solution.Name {
+								namespaceCandidates[rootNamespace]++
+							}
+						}
+					}
+				}
+			}
+
+			// Strategy 3: Extract from C# source files
+			for _, project := range solutionInfo.Projects {
+				if project.Directory != "" {
+					detectedNS := detector.ExtractNamespaceFromSourceFiles(project.Directory)
+					if detectedNS != "" {
+						if strings.Contains(detectedNS, ".") {
+							parts := strings.Split(detectedNS, ".")
+							if len(parts) > 0 {
+								candidate := parts[0]
+								if candidate != "" && candidate != sch.Solution.Name {
+									namespaceCandidates[candidate]++
+								}
+							}
+						} else {
+							if detectedNS != "" && detectedNS != sch.Solution.Name {
+								namespaceCandidates[detectedNS]++
+							}
+						}
+					}
+				}
+			}
+
+			// Find the most common candidate
+			maxCount := 0
+			for candidate, count := range namespaceCandidates {
+				if count > maxCount {
+					maxCount = count
+					detectedNamespaceRoot = candidate
+				}
+			}
+		}
+
+		if detectedNamespaceRoot != "" {
+			sch.Solution.NamespaceRoot = detectedNamespaceRoot
+			if verbose {
+				fmt.Printf("✓ Auto-detected namespace root: %s\n", detectedNamespaceRoot)
 			}
 		}
 		// If still empty, will default to Solution.Name in validator
@@ -397,6 +478,14 @@ func applySchemaOverrides(sch *schema.Schema) {
 			fmt.Println("✓ Overriding generate controllers from CLI: true")
 		}
 	}
+
+	// Override generation mode
+	if schemaGenerationMode != "" {
+		sch.Solution.GenerationMode = schema.GenerationMode(schemaGenerationMode)
+		if verbose {
+			fmt.Printf("✓ Overriding generation mode from CLI: %s\n", schemaGenerationMode)
+		}
+	}
 }
 
 func runGenerate() error {
@@ -422,56 +511,81 @@ func runGenerate() error {
 	// Apply CLI flag overrides to schema (CLI flags take precedence)
 	applySchemaOverrides(sch)
 
-	// Try to detect solution and all missing information before validation
-	var solutionInfo *detector.SolutionInfo
-	var solutionDetectErr error
-
-	// Try to detect solution first
-	fmt.Println("\nDetecting solution structure...")
-	if solutionPath != "" {
-		solutionInfo, solutionDetectErr = detector.ParseSolution(solutionPath)
-	} else {
-		solutionInfo, solutionDetectErr = detector.FindSolution(".")
-	}
-
-	// Detect and prompt for all missing required fields
-	if err := detectAndPromptMissingFields(sch, solutionInfo, solutionDetectErr); err != nil {
-		return err
-	}
-
-	// Validate schema
+	// Validate schema early to ensure generationMode is set
 	if err := sch.Validate(); err != nil {
 		return fmt.Errorf("schema validation failed: %w", err)
 	}
 
-	// Detect solution if not already detected (for use in rest of function)
-	if solutionInfo == nil {
-		if solutionPath != "" {
-			solutionInfo, err = detector.ParseSolution(solutionPath)
-		} else {
-			solutionInfo, err = detector.FindSolution(".")
-		}
-	} else {
-		// Reuse the error from earlier detection attempt
-		err = solutionDetectErr
-	}
+	var solutionInfo *detector.SolutionInfo
+	var solutionDetectErr error
 
-	// If no solution found, offer to create one
-	if err != nil {
+	// Handle generation mode
+	if sch.Solution.GenerationMode == schema.GenerationModeNew {
+		// For "new" mode, automatically create a solution
+		fmt.Println("\nGeneration mode: new - creating new solution...")
 		scaffolder := prompts.NewScaffolder()
-		created, newSolutionPath, scaffoldErr := scaffolder.PromptCreateSolution(".", autoScaffold)
+		created, newSolutionPath, scaffoldErr := scaffolder.PromptCreateSolution(".", true) // Force auto-scaffold for new mode
 
 		if !created {
 			if scaffoldErr != nil {
-				return fmt.Errorf("failed to detect or create solution: %w", scaffoldErr)
+				return fmt.Errorf("failed to create new solution: %w", scaffoldErr)
 			}
-			return fmt.Errorf("failed to detect solution: %w", err)
+			return fmt.Errorf("solution creation was cancelled")
 		}
 
 		// Try to detect the newly created solution
-		solutionInfo, err = detector.FindSolution(newSolutionPath)
+		solutionInfo, solutionDetectErr = detector.FindSolution(newSolutionPath)
+		if solutionDetectErr != nil {
+			return fmt.Errorf("failed to detect newly created solution: %w", solutionDetectErr)
+		}
+	} else {
+		// For "existing" mode, try to detect solution
+		fmt.Println("\nGeneration mode: existing - detecting solution structure...")
+		if solutionPath != "" {
+			solutionInfo, solutionDetectErr = detector.ParseSolution(solutionPath)
+		} else {
+			solutionInfo, solutionDetectErr = detector.FindSolution(".")
+		}
+
+		// Detect and prompt for all missing required fields
+		if err := detectAndPromptMissingFields(sch, solutionInfo, solutionDetectErr); err != nil {
+			return err
+		}
+
+		// Re-validate after detecting missing fields
+		if err := sch.Validate(); err != nil {
+			return fmt.Errorf("schema validation failed: %w", err)
+		}
+
+		// Detect solution if not already detected (for use in rest of function)
+		if solutionInfo == nil {
+			if solutionPath != "" {
+				solutionInfo, err = detector.ParseSolution(solutionPath)
+			} else {
+				solutionInfo, err = detector.FindSolution(".")
+			}
+		} else {
+			// Reuse the error from earlier detection attempt
+			err = solutionDetectErr
+		}
+
+		// If no solution found, offer to create one (only in existing mode)
 		if err != nil {
-			return fmt.Errorf("failed to detect newly created solution: %w", err)
+			scaffolder := prompts.NewScaffolder()
+			created, newSolutionPath, scaffoldErr := scaffolder.PromptCreateSolution(".", autoScaffold)
+
+			if !created {
+				if scaffoldErr != nil {
+					return fmt.Errorf("failed to detect or create solution: %w", scaffoldErr)
+				}
+				return fmt.Errorf("failed to detect solution: %w", err)
+			}
+
+			// Try to detect the newly created solution
+			solutionInfo, err = detector.FindSolution(newSolutionPath)
+			if err != nil {
+				return fmt.Errorf("failed to detect newly created solution: %w", err)
+			}
 		}
 	}
 
@@ -543,6 +657,8 @@ func runGenerate() error {
 	module := sch.Solution.ModuleName
 	if moduleName != "" {
 		module = moduleName
+		// Update schema with overridden module name
+		sch.Solution.ModuleName = moduleName
 	}
 
 	paths, err := detector.DetectLayerPaths(solutionInfo, module)
@@ -550,13 +666,16 @@ func runGenerate() error {
 		return fmt.Errorf("failed to detect layer paths: %w", err)
 	}
 
+	// Get module folder name (with prefix/suffix if configured)
+	moduleFolder := sch.Solution.GetModuleFolderName()
+
 	// Ensure directories exist
 	if !dryRun {
 		if err := paths.EnsureDirectories(); err != nil {
 			return fmt.Errorf("failed to create directories: %w", err)
 		}
 		// Ensure module-specific directories exist
-		if err := paths.EnsureModuleDirectories(module); err != nil {
+		if err := paths.EnsureModuleDirectories(moduleFolder); err != nil {
 			return fmt.Errorf("failed to create module directories: %w", err)
 		}
 	}
@@ -699,8 +818,15 @@ func runGenerate() error {
 			return fmt.Errorf("failed to generate service for %s: %w", entity.Name, err)
 		}
 
-		if err := serviceGen.GenerateAutoMapperProfile(sch, &entity, paths); err != nil {
-			return fmt.Errorf("failed to generate AutoMapper profile for %s: %w", entity.Name, err)
+		// Generate mapper based on mapping library setting
+		if sch.Options.MappingLibrary == "mapperly" {
+			if err := serviceGen.GenerateMapperlyProfile(sch, &entity, paths); err != nil {
+				return fmt.Errorf("failed to generate Mapperly profile for %s: %w", entity.Name, err)
+			}
+		} else {
+			if err := serviceGen.GenerateAutoMapperProfile(sch, &entity, paths); err != nil {
+				return fmt.Errorf("failed to generate AutoMapper profile for %s: %w", entity.Name, err)
+			}
 		}
 
 		if err := serviceGen.GenerateController(sch, &entity, paths); err != nil {

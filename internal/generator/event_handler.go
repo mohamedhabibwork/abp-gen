@@ -37,7 +37,7 @@ func (g *EventHandlerGenerator) Generate(sch *schema.Schema, entity *schema.Enti
 	}
 
 	// Ensure event handlers directory exists
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	if err := os.MkdirAll(handlersPath, 0755); err != nil {
 		return fmt.Errorf("failed to create event handlers directory: %w", err)
@@ -71,7 +71,7 @@ func (g *EventHandlerGenerator) GenerateCreatedHandler(sch *schema.Schema, entit
 		return fmt.Errorf("failed to execute created event handler template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	filePath := filepath.Join(handlersPath, entity.Name+"CreatedEventHandler.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -91,7 +91,7 @@ func (g *EventHandlerGenerator) GenerateUpdatedHandler(sch *schema.Schema, entit
 		return fmt.Errorf("failed to execute updated event handler template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	filePath := filepath.Join(handlersPath, entity.Name+"UpdatedEventHandler.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -111,7 +111,7 @@ func (g *EventHandlerGenerator) GenerateDeletedHandler(sch *schema.Schema, entit
 		return fmt.Errorf("failed to execute deleted event handler template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	handlersPath := filepath.Join(paths.Application, "EventHandlers", moduleFolder)
 	filePath := filepath.Join(handlersPath, entity.Name+"DeletedEventHandler.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -120,10 +120,11 @@ func (g *EventHandlerGenerator) GenerateDeletedHandler(sch *schema.Schema, entit
 // prepareEventHandlerData prepares data for event handler templates
 func (g *EventHandlerGenerator) prepareEventHandlerData(sch *schema.Schema, entity *schema.Entity, eventType string) map[string]interface{} {
 	return map[string]interface{}{
-		"SolutionName":  sch.Solution.Name,
-		"ModuleName":    sch.Solution.ModuleName,
-		"NamespaceRoot": sch.Solution.NamespaceRoot,
-		"EntityName":    entity.Name,
-		"EventType":     eventType,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EventType":            eventType,
 	}
 }

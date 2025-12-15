@@ -2,13 +2,13 @@ using System;
 using System.Threading.Tasks;
 using Shouldly;
 using Xunit;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
-using {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Domain.Managers.{{.ModuleNameWithSuffix}};
 {{- if .Manager}}
-using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleNameWithSuffix}};
 {{- end}}
 
-namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module.Domain
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleNameWithSuffix}}.Domain
 {
     public class {{.EntityName}}DomainTests : {{.ModuleName}}TestBase
     {

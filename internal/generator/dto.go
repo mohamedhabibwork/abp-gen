@@ -34,7 +34,7 @@ func (g *DTOGenerator) Generate(sch *schema.Schema, entity *schema.Entity, paths
 	}
 
 	// Ensure DTO directory exists
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	if err := os.MkdirAll(dtoPath, 0755); err != nil {
 		return fmt.Errorf("failed to create DTO directory: %w", err)
@@ -72,7 +72,7 @@ func (g *DTOGenerator) GenerateCreateDto(sch *schema.Schema, entity *schema.Enti
 		return fmt.Errorf("failed to execute create DTO template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	filePath := filepath.Join(dtoPath, "Create"+entity.Name+"Dto.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -92,7 +92,7 @@ func (g *DTOGenerator) GenerateUpdateDto(sch *schema.Schema, entity *schema.Enti
 		return fmt.Errorf("failed to execute update DTO template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	filePath := filepath.Join(dtoPath, "Update"+entity.Name+"Dto.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -110,6 +110,7 @@ func (g *DTOGenerator) GenerateEntityDto(sch *schema.Schema, entity *schema.Enti
 	data := map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"PrimaryKeyType":          primaryKeyType,
@@ -119,6 +120,8 @@ func (g *DTOGenerator) GenerateEntityDto(sch *schema.Schema, entity *schema.Enti
 		"HasRelations":            entity.HasRelations(),
 		"OneToManyRelations":      getOneToManyRelations(entity),
 		"ManyToManyRelations":     getManyToManyRelations(entity),
+		"HasEnumProperties":       entity.HasEnumProperties(),
+		"EnumNames":               entity.GetEnumNames(),
 	}
 
 	var buf bytes.Buffer
@@ -126,7 +129,7 @@ func (g *DTOGenerator) GenerateEntityDto(sch *schema.Schema, entity *schema.Enti
 		return fmt.Errorf("failed to execute entity DTO template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	dtoPath := paths.GetEntityDTOPath(moduleFolder, entity.Name)
 	filePath := filepath.Join(dtoPath, entity.Name+"Dto.cs")
 	return g.writer.WriteFile(filePath, buf.String())
@@ -137,11 +140,15 @@ func (g *DTOGenerator) prepareDtoData(sch *schema.Schema, entity *schema.Entity)
 	return map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"Properties":              entity.Properties,
 		"NonForeignKeyProperties": entity.GetNonForeignKeyProperties(),
 		"ForeignKeyProperties":    entity.GetForeignKeyProperties(),
+		"HasEnumProperties":       entity.HasEnumProperties(),
+		"EnumNames":               entity.GetEnumNames(),
+		"NeedsDataAnnotations":    entity.NeedsDataAnnotations(),
 	}
 }
 
@@ -159,11 +166,12 @@ func (g *DTOGenerator) GenerateAppServiceInterface(sch *schema.Schema, entity *s
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":   sch.Solution.Name,
-		"ModuleName":     sch.Solution.ModuleName,
-		"NamespaceRoot":  sch.Solution.NamespaceRoot,
-		"EntityName":     entity.Name,
-		"PrimaryKeyType": primaryKeyType,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"PrimaryKeyType":       primaryKeyType,
 	}
 
 	var buf bytes.Buffer
@@ -171,7 +179,7 @@ func (g *DTOGenerator) GenerateAppServiceInterface(sch *schema.Schema, entity *s
 		return fmt.Errorf("failed to execute app service interface template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.ContractsServices, moduleFolder, "I"+entity.Name+"AppService.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }

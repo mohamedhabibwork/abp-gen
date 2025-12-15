@@ -62,13 +62,14 @@ func (g *ValueObjectGenerator) Generate(sch *schema.Schema, entity *schema.Entit
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"Properties":      entity.Properties,
-		"Config":          config,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"Properties":           entity.Properties,
+		"Config":               config,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -76,7 +77,7 @@ func (g *ValueObjectGenerator) Generate(sch *schema.Schema, entity *schema.Entit
 		return fmt.Errorf("failed to execute value_object_enhanced template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	voPath := filepath.Join(paths.DomainEntities, moduleFolder, entity.Name+".cs")
 	return g.writer.WriteFile(voPath, buf.String())
 }
@@ -94,14 +95,15 @@ func (g *ValueObjectGenerator) GenerateFactory(sch *schema.Schema, entity *schem
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"FactoryMethod":   entity.ValueObjectConfig.FactoryMethod,
-		"Properties":      entity.Properties,
-		"ValidationRules": entity.ValueObjectConfig.ValidationRules,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"FactoryMethod":        entity.ValueObjectConfig.FactoryMethod,
+		"Properties":           entity.Properties,
+		"ValidationRules":      entity.ValueObjectConfig.ValidationRules,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -109,7 +111,7 @@ func (g *ValueObjectGenerator) GenerateFactory(sch *schema.Schema, entity *schem
 		return fmt.Errorf("failed to execute value_object_factory template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	factoryPath := filepath.Join(paths.DomainEntities, moduleFolder, entity.Name+"Factory.cs")
 	return g.writer.WriteFile(factoryPath, buf.String())
 }

@@ -1,11 +1,11 @@
 using AutoMapper;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
-using {{.NamespaceRoot}}.Application.Contracts.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Application.Contracts.{{.ModuleNameWithSuffix}};
 {{- if .HasEvents}}
-using {{.NamespaceRoot}}.Events.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Events.{{.ModuleNameWithSuffix}};
 {{- end}}
 
-namespace {{.NamespaceRoot}}.Application.AutoMapper.{{.ModuleName}}Module
+namespace {{.NamespaceRoot}}.Application.AutoMapper.{{.ModuleNameWithSuffix}}
 {
     public class {{.EntityName}}Profile : Profile
     {

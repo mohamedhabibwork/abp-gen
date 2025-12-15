@@ -71,15 +71,16 @@ func (g *DomainEventsGenerator) generateEventClass(sch *schema.Schema, entity *s
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"EventName":       event.Name,
-		"EventType":       event.Type,
-		"Payload":         event.Payload,
-		"Description":     event.Description,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EventName":            event.Name,
+		"EventType":            event.Type,
+		"Payload":              event.Payload,
+		"Description":          event.Description,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -87,7 +88,7 @@ func (g *DomainEventsGenerator) generateEventClass(sch *schema.Schema, entity *s
 		return fmt.Errorf("failed to execute event template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 
 	var eventPath string
 	if event.Type == "domain" {
@@ -128,15 +129,16 @@ func (g *DomainEventsGenerator) generateEventHandler(sch *schema.Schema, entity 
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":    sch.Solution.Name,
-		"ModuleName":      sch.Solution.ModuleName,
-		"NamespaceRoot":   sch.Solution.NamespaceRoot,
-		"EntityName":      entity.Name,
-		"EventName":       event.Name,
-		"HandlerName":     handler.Name,
-		"HandlerType":     handler.HandlerType,
-		"Action":          handler.Action,
-		"TargetFramework": sch.Solution.TargetFramework,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EventName":            event.Name,
+		"HandlerName":          handler.Name,
+		"HandlerType":          handler.HandlerType,
+		"Action":               handler.Action,
+		"TargetFramework":      sch.Solution.TargetFramework,
 	}
 
 	var buf bytes.Buffer
@@ -144,7 +146,7 @@ func (g *DomainEventsGenerator) generateEventHandler(sch *schema.Schema, entity 
 		return fmt.Errorf("failed to execute event handler template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	handlerPath := filepath.Join(paths.ApplicationEventHandlers, moduleFolder, handler.Name+".cs")
 	return g.writer.WriteFile(handlerPath, buf.String())
 }

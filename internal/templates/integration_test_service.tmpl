@@ -4,10 +4,10 @@ using Shouldly;
 using Xunit;
 using Volo.Abp.Domain.Entities;
 using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module;
-using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleNameWithSuffix}};
 using Volo.Abp.Application.Dtos;
 
-namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module.Services
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleNameWithSuffix}}.Services
 {
     public class {{.EntityName}}AppServiceTests : {{.ModuleName}}TestBase
     {

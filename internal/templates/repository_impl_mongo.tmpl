@@ -6,10 +6,10 @@ using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Volo.Abp.Domain.Repositories.MongoDB;
 using Volo.Abp.MongoDB;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
-using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleNameWithSuffix}};
 
-namespace {{.NamespaceRoot}}.MongoDB.Repositories.{{.ModuleName}}Module
+namespace {{.NamespaceRoot}}.MongoDB.Repositories.{{.ModuleNameWithSuffix}}
 {
     public class {{.EntityName}}CustomRepository : Mongo{{.EntityName}}Repository, I{{.EntityName}}CustomRepository
     {

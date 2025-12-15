@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 using Shouldly;
 using Xunit;
 using Volo.Abp.Domain.Entities;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
-using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleNameWithSuffix}};
 
-namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module.Repositories
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleNameWithSuffix}}.Repositories
 {
     public class {{.EntityName}}RepositoryTests : {{.ModuleName}}TestBase
     {

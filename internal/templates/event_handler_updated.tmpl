@@ -2,10 +2,10 @@ using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Distributed;
 using Microsoft.Extensions.Caching.Distributed;
-using {{.NamespaceRoot}}.Events.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Events.{{.ModuleNameWithSuffix}};
 using Microsoft.Extensions.Logging;
 
-namespace {{.NamespaceRoot}}.Application.EventHandlers.{{.ModuleName}}Module
+namespace {{.NamespaceRoot}}.Application.EventHandlers.{{.ModuleNameWithSuffix}}
 {
     public class {{.EntityName}}{{.EventType}}EventHandler : IDistributedEventHandler<{{.EntityName}}Eto>, ITransientDependency
     {

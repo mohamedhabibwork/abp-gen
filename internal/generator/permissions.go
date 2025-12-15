@@ -43,7 +43,8 @@ func (g *PermissionsGenerator) Generate(sch *schema.Schema, entity *schema.Entit
 
 // updatePermissionsFile updates the permissions constants file
 func (g *PermissionsGenerator) updatePermissionsFile(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
-	permissionsPath := paths.GetPermissionsFilePath(sch.Solution.ModuleName)
+	moduleFolder := sch.Solution.GetModuleFolderName()
+	permissionsPath := paths.GetPermissionsFilePath(moduleFolder, sch.Solution.ModuleName)
 
 	// Check if entity permissions already exist
 	searchPattern := fmt.Sprintf("public static class %sManagement", entity.Name)
@@ -71,7 +72,7 @@ func (g *PermissionsGenerator) updatePermissionsFile(sch *schema.Schema, entity 
 		moduleName := sch.Solution.ModuleName
 
 		// Build initial permissions file structure
-		moduleNamespace := moduleName + "Module"
+		moduleNamespace := sch.Solution.GetModuleNameWithSuffix()
 		content := fmt.Sprintf(`using Volo.Abp.Authorization.Permissions;
 
 namespace %s.Application.Contracts.Permissions.%s
@@ -112,7 +113,8 @@ namespace %s.Application.Contracts.Permissions.%s
 
 // updatePermissionProvider updates the permission definition provider
 func (g *PermissionsGenerator) updatePermissionProvider(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
-	providerPath := paths.GetPermissionProviderPath(sch.Solution.ModuleName)
+	moduleFolder := sch.Solution.GetModuleFolderName()
+	providerPath := paths.GetPermissionProviderPath(moduleFolder, sch.Solution.ModuleName)
 
 	// Check if entity permissions already exist
 	searchPattern := fmt.Sprintf("%sManagement.Default", entity.Name)
@@ -148,7 +150,7 @@ func (g *PermissionsGenerator) updatePermissionProvider(sch *schema.Schema, enti
 		moduleNameLower := strings.ToLower(moduleName[:1]) + moduleName[1:]
 
 		// Build initial permission provider file structure
-		moduleNamespace := moduleName + "Module"
+		moduleNamespace := sch.Solution.GetModuleNameWithSuffix()
 		content := fmt.Sprintf(`using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using %s.Localization.%sModule;

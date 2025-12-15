@@ -3,11 +3,12 @@
     "name": "ECommerce",
     "moduleName": "ProductService",
     "namespaceRoot": "ECommerce.ProductService",
-    "abpVersion": "9.0",
-    "targetFramework": "abp8-monolith",
+    "abpVersion": "10.0",
+    "targetFramework": "abp10-monolith",
     "primaryKeyType": "Guid",
     "dbProvider": "efcore",
     "generateControllers": true,
+    "generationMode": "existing",
     "multiTenancy": {
       "enabled": true,
       "strategy": "host",
@@ -705,6 +706,7 @@
     }
   ],
   "options": {
+    "mappingLibrary": "mapperly",
     "useAuditedAggregateRoot": true,
     "useSoftDelete": true,
     "useConcurrencyStamp": true,

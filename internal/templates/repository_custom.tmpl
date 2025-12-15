@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
-using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleNameWithSuffix}};
 
-namespace {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module
+namespace {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleNameWithSuffix}}
 {
     public interface I{{.EntityName}}CustomRepository : I{{.EntityName}}Repository
     {

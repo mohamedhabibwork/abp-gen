@@ -41,6 +41,7 @@ func (g *ManagerGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	data := map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"PrimaryKeyType":          primaryKeyType,
@@ -55,7 +56,7 @@ func (g *ManagerGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	}
 
 	// Managers are typically in Domain/Managers directory
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	managerPath := filepath.Join(paths.Domain, "Managers", moduleFolder, entity.Name+"Manager.cs")
 	return g.writer.WriteFile(managerPath, buf.String())
 }

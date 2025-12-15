@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/mohamedhabibwork/abp-gen/internal/detector"
@@ -41,6 +42,7 @@ func (g *ServiceGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 	data := map[string]interface{}{
 		"SolutionName":            sch.Solution.Name,
 		"ModuleName":              sch.Solution.ModuleName,
+		"ModuleNameWithSuffix":    sch.Solution.GetModuleNameWithSuffix(),
 		"NamespaceRoot":           sch.Solution.NamespaceRoot,
 		"EntityName":              entity.Name,
 		"PrimaryKeyType":          primaryKeyType,
@@ -53,6 +55,9 @@ func (g *ServiceGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 		"ManyToManyRelations":     getManyToManyRelations(entity),
 		"IsAggregateRoot":         entity.EntityType == "AggregateRoot" || entity.EntityType == "FullAuditedAggregateRoot",
 		"HasEvents":               entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
+		"HasEnumProperties":       entity.HasEnumProperties(),
+		"EnumNames":               entity.GetEnumNames(),
+		"NeedsFluentValidation":   entity.NeedsFluentValidation() || sch.Options.ValidationType == "fluentvalidation",
 	}
 
 	var buf bytes.Buffer
@@ -60,7 +65,7 @@ func (g *ServiceGenerator) Generate(sch *schema.Schema, entity *schema.Entity, p
 		return fmt.Errorf("failed to execute app service template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.ApplicationServices, moduleFolder, entity.Name+"AppService.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
@@ -73,12 +78,13 @@ func (g *ServiceGenerator) GenerateAutoMapperProfile(sch *schema.Schema, entity 
 	}
 
 	data := map[string]interface{}{
-		"SolutionName":  sch.Solution.Name,
-		"ModuleName":    sch.Solution.ModuleName,
-		"NamespaceRoot": sch.Solution.NamespaceRoot,
-		"EntityName":    entity.Name,
-		"IsValueObject": entity.EntityType == "ValueObject",
-		"HasEvents":     entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"IsValueObject":        entity.EntityType == "ValueObject",
+		"HasEvents":            entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
 	}
 
 	var buf bytes.Buffer
@@ -86,8 +92,40 @@ func (g *ServiceGenerator) GenerateAutoMapperProfile(sch *schema.Schema, entity 
 		return fmt.Errorf("failed to execute mapper profile template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.ApplicationAutoMapper, moduleFolder, entity.Name+"Profile.cs")
+	return g.writer.WriteFile(filePath, buf.String())
+}
+
+// GenerateMapperlyProfile generates Mapperly mapper class
+func (g *ServiceGenerator) GenerateMapperlyProfile(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
+	tmpl, err := g.tmplLoader.Load("mapperly_profile.tmpl")
+	if err != nil {
+		return fmt.Errorf("failed to load mapperly profile template: %w", err)
+	}
+
+	data := map[string]interface{}{
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"IsValueObject":        entity.EntityType == "ValueObject",
+		"HasEvents":            entity.EntityType != "ValueObject" && entity.EntityType != "Entity",
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return fmt.Errorf("failed to execute mapperly profile template: %w", err)
+	}
+
+	moduleFolder := sch.Solution.GetModuleFolderName()
+	// Create Mapperly directory if it doesn't exist
+	mapperlyPath := filepath.Join(paths.Application, "Mapperly", moduleFolder)
+	if err := os.MkdirAll(mapperlyPath, 0755); err != nil {
+		return fmt.Errorf("failed to create mapperly directory: %w", err)
+	}
+	filePath := filepath.Join(mapperlyPath, entity.Name+"Mapper.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
 
@@ -105,12 +143,13 @@ func (g *ServiceGenerator) GenerateController(sch *schema.Schema, entity *schema
 	primaryKeyType := entity.GetEffectivePrimaryKeyType(sch.Solution.PrimaryKeyType)
 
 	data := map[string]interface{}{
-		"SolutionName":     sch.Solution.Name,
-		"ModuleName":       sch.Solution.ModuleName,
-		"NamespaceRoot":    sch.Solution.NamespaceRoot,
-		"EntityName":       entity.Name,
-		"EntityNamePlural": templates.Pluralize(entity.Name),
-		"PrimaryKeyType":   primaryKeyType,
+		"SolutionName":         sch.Solution.Name,
+		"ModuleName":           sch.Solution.ModuleName,
+		"ModuleNameWithSuffix": sch.Solution.GetModuleNameWithSuffix(),
+		"NamespaceRoot":        sch.Solution.NamespaceRoot,
+		"EntityName":           entity.Name,
+		"EntityNamePlural":     templates.Pluralize(entity.Name),
+		"PrimaryKeyType":       primaryKeyType,
 	}
 
 	var buf bytes.Buffer
@@ -118,7 +157,7 @@ func (g *ServiceGenerator) GenerateController(sch *schema.Schema, entity *schema
 		return fmt.Errorf("failed to execute controller template: %w", err)
 	}
 
-	moduleFolder := sch.Solution.ModuleName + "Module"
+	moduleFolder := sch.Solution.GetModuleFolderName()
 	filePath := filepath.Join(paths.HttpApiControllers, moduleFolder, entity.Name+"Controller.cs")
 	return g.writer.WriteFile(filePath, buf.String())
 }
