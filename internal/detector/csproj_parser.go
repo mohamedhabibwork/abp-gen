@@ -235,24 +235,24 @@ func ExtractRootNamespace(csprojPath string) string {
 func ExtractNamespaceFromSourceFiles(directory string) string {
 	namespaceRegex := regexp.MustCompile(`^\s*namespace\s+([\w.]+)`)
 	var foundNamespace string
-	
+
 	// Look for .cs files in the directory
 	filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
 		if err != nil || foundNamespace != "" {
 			return nil // Skip errors or if already found
 		}
-		
+
 		// Only check .cs files in the root directory (not subdirectories)
 		if !info.IsDir() && strings.HasSuffix(path, ".cs") {
 			if filepath.Dir(path) != directory {
 				return nil // Skip subdirectories
 			}
-			
+
 			data, err := os.ReadFile(path)
 			if err != nil {
 				return nil
 			}
-			
+
 			lines := strings.Split(string(data), "\n")
 			for _, line := range lines {
 				matches := namespaceRegex.FindStringSubmatch(line)
@@ -262,9 +262,9 @@ func ExtractNamespaceFromSourceFiles(directory string) string {
 				}
 			}
 		}
-		
+
 		return nil
 	})
-	
+
 	return foundNamespace
 }

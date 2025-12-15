@@ -37,9 +37,9 @@ func (g *ValueObjectGenerator) Generate(sch *schema.Schema, entity *schema.Entit
 	if err != nil {
 		// If template not found, skip value object generation gracefully
 		errStr := err.Error()
-		if strings.Contains(errStr, "not found") || 
-		   strings.Contains(errStr, "file does not exist") ||
-		   strings.Contains(errStr, "no such file") {
+		if strings.Contains(errStr, "not found") ||
+			strings.Contains(errStr, "file does not exist") ||
+			strings.Contains(errStr, "no such file") {
 			return nil // Skip value object generation if template doesn't exist
 		}
 		return fmt.Errorf("failed to load value_object_enhanced template: %w", err)
