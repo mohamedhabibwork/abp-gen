@@ -32,6 +32,7 @@ func GetTemplateFuncs() template.FuncMap {
 		"toLower":    strings.ToLower,
 		"toUpper":    strings.ToUpper,
 		"join":       strings.Join,
+		"sub":        Sub,
 	}
 }
 
@@ -146,4 +147,9 @@ func Attribute(attrType string, value interface{}) string {
 	default:
 		return "[" + attrType + "]"
 	}
+}
+
+// Sub subtracts b from a (for template arithmetic)
+func Sub(a, b int) int {
+	return a - b
 }

@@ -1,0 +1,23 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+
+namespace {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module
+{
+    public interface I{{.EntityName}}CustomRepository : I{{.EntityName}}Repository
+    {
+{{- range .Methods}}
+        /// <summary>
+        {{- if .Description}}
+        /// {{.Description}}
+        {{- else}}
+        /// {{.Name}}
+        {{- end}}
+        /// </summary>
+        {{.ReturnType}} {{.Name}}({{range $index, $param := .Parameters}}{{if $index}}, {{end}}{{$param.Type}} {{$param.Name}}{{end}});
+{{- end}}
+    }
+}
+

@@ -11,14 +11,39 @@ namespace {{.NamespaceRoot}}.Application.AutoMapper.{{.ModuleName}}Module
     {
         public {{.EntityName}}Profile()
         {
-            CreateMap<{{.EntityName}}, {{.EntityName}}Dto>().ReverseMap();
-{{- if not .IsValueObject}}            
-            CreateMap<Create{{.EntityName}}Dto, {{.EntityName}}>().ReverseMap();
-            CreateMap<Update{{.EntityName}}Dto, {{.EntityName}}>().ReverseMap();
+            // Entity to DTO mapping
+            // Note: Foreign key Name properties (e.g., CategoryName) are typically set manually
+            // in the application service after loading related entities
+            CreateMap<{{.EntityName}}, {{.EntityName}}Dto>()
+                {{- range .Properties}}
+                {{- if .IsForeignKey}}
+                .ForMember(dest => dest.{{.Name}}Name, opt => opt.Ignore())
+                {{- end}}
+                {{- end}};
+
+            // DTO to Entity mapping (reverse)
+            // Note: Foreign key IDs are set manually in the application service
+            CreateMap<{{.EntityName}}Dto, {{.EntityName}}>()
+                {{- range .Properties}}
+                {{- if .IsForeignKey}}
+                .ForMember(dest => dest.{{.Name}}Id, opt => opt.Ignore())
+                .ForMember(dest => dest.{{.Name}}, opt => opt.Ignore())
+                {{- end}}
+                {{- end}};
+
+{{- if not .IsValueObject}}
+            // CreateDto to Entity mapping
+            // Note: CreateDto only contains non-foreign key properties
+            CreateMap<Create{{.EntityName}}Dto, {{.EntityName}}>();
+
+            // UpdateDto to Entity mapping
+            // Note: UpdateDto only contains non-foreign key properties
+            CreateMap<Update{{.EntityName}}Dto, {{.EntityName}}>();
 {{- end}}
-{{- if .HasEvents}}            
-            CreateMap<{{.EntityName}}, {{.EntityName}}Eto>().ReverseMap();
-{{- end}}        
+{{- if .HasEvents}}
+            // Entity to ETO mapping for distributed events
+            CreateMap<{{.EntityName}}, {{.EntityName}}Eto>();
+{{- end}}
         }
     }
 }

@@ -1,0 +1,39 @@
+using System;
+using Volo.Abp;
+
+namespace {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module
+{
+    public static class {{.EntityName}}Factory
+    {
+        public static {{.EntityName}} {{.FactoryMethod}}({{range $index, $prop := .Properties}}{{if $index}}, {{end}}{{$prop.Type}} {{$prop.Name | lowerFirst}}{{end}})
+        {
+            // Validation
+            {{- range .Properties}}
+            {{- if .IsRequired}}
+            if ({{.Name | lowerFirst}} == null{{if ne .Type "string"}} || {{.Name | lowerFirst}}.Equals(default({{.Type}})){{end}})
+            {
+                throw new ArgumentNullException(nameof({{.Name | lowerFirst}}), "{{.Name}} is required");
+            }
+            {{- end}}
+            {{- if .MaxLength}}
+            {{- if eq .Type "string"}}
+            if ({{.Name | lowerFirst}} != null && {{.Name | lowerFirst}}.Length > {{.MaxLength}})
+            {
+                throw new ArgumentException($"{{.Name}} cannot exceed {{.MaxLength}} characters", nameof({{.Name | lowerFirst}}));
+            }
+            {{- end}}
+            {{- end}}
+            {{- end}}
+
+            {{- if .ValidationRules}}
+            // Custom validation rules
+            {{- range .ValidationRules}}
+            // TODO: Implement validation: {{.}}
+            {{- end}}
+            {{- end}}
+
+            return new {{.EntityName}}({{range $index, $prop := .Properties}}{{if $index}}, {{end}}{{$prop.Name | lowerFirst}}{{end}});
+        }
+    }
+}
+

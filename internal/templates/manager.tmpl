@@ -4,56 +4,154 @@ using Volo.Abp.Domain.Services;
 using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
 using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
 using Volo.Abp;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Validation;
+using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}}Module
 {
     public class {{.EntityName}}Manager : DomainService
     {
         private readonly I{{.EntityName}}Repository _repository;
+        private readonly ILogger<{{.EntityName}}Manager> _logger;
 
-        public {{.EntityName}}Manager(I{{.EntityName}}Repository repository)
+        public {{.EntityName}}Manager(
+            I{{.EntityName}}Repository repository,
+            ILogger<{{.EntityName}}Manager> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
 
         public async Task<{{.EntityName}}> CreateAsync(
             {{.PrimaryKeyType}} id{{range .NonForeignKeyProperties}},
             {{.Type}} {{.Name | lowerFirst}}{{end}})
         {
-            // Add business logic validation here
-            // Example: Check for duplicates, validate business rules, etc.
+            _logger.LogInformation("Starting CreateAsync business logic for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
             
-            // await CheckNameExistsAsync({{range .NonForeignKeyProperties}}{{if eq .Name "Name"}}{{.Name | lowerFirst}}{{end}}{{end}});
+            try
+            {
+                // Add business logic validation here
+                // Example: Check for duplicates, validate business rules, etc.
+                
+                // await CheckNameExistsAsync({{range .NonForeignKeyProperties}}{{if eq .Name "Name"}}{{.Name | lowerFirst}}{{end}}{{end}});
 
-            var entity = new {{.EntityName}}(
-                id{{range .NonForeignKeyProperties}},
-                {{.Name | lowerFirst}}{{end}}
-            );
+                var entity = new {{.EntityName}}(
+                    id{{range .NonForeignKeyProperties}},
+                    {{.Name | lowerFirst}}{{end}}
+                );
 
-            // Add any additional business logic here
-            // Example: Set default values, calculate derived properties, etc.
+                // Add any additional business logic here
+                // Example: Set default values, calculate derived properties, etc.
 
-            return entity;
+                _logger.LogInformation("Successfully completed CreateAsync business logic for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", id);
+                return entity;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in CreateAsync business logic for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred while creating the item. Please try again later.");
+            }
         }
 
         public async Task<{{.EntityName}}> UpdateAsync(
             {{.EntityName}} entity{{range .NonForeignKeyProperties}},
             {{.Type}} {{.Name | lowerFirst}}{{end}})
         {
-            // Add business logic validation here
-            // Example: Check for duplicates, validate business rules, etc.
+            _logger.LogInformation("Starting UpdateAsync business logic for {EntityName} with Id: {Id}", 
+                "{{.EntityName}}", entity.Id);
+            
+            try
+            {
+                // Add business logic validation here
+                // Example: Check for duplicates, validate business rules, etc.
 
-            entity.Update({{range $i, $p := .NonForeignKeyProperties}}{{if $i}}, {{end}}{{$p.Name | lowerFirst}}{{end}});
+                entity.Update({{range $i, $p := .NonForeignKeyProperties}}{{if $i}}, {{end}}{{$p.Name | lowerFirst}}{{end}});
 
-            return entity;
+                _logger.LogInformation("Successfully completed UpdateAsync business logic for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", entity.Id);
+                return entity;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in UpdateAsync business logic for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", entity.Id);
+                throw new UserFriendlyException("An unexpected error occurred while updating the item. Please try again later.");
+            }
         }
 
         public async Task DeleteAsync({{.EntityName}} entity)
         {
-            // Add business logic validation here
-            // Example: Check if entity can be deleted, cascade delete rules, etc.
+            _logger.LogInformation("Starting DeleteAsync business logic for {EntityName} with Id: {Id}", 
+                "{{.EntityName}}", entity.Id);
+            
+            try
+            {
+                // Add business logic validation here
+                // Example: Check if entity can be deleted, cascade delete rules, etc.
 
-            await _repository.DeleteAsync(entity);
+                await _repository.DeleteAsync(entity);
+                
+                _logger.LogInformation("Successfully completed DeleteAsync business logic for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", entity.Id);
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in DeleteAsync business logic for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", entity.Id);
+                throw new UserFriendlyException("An unexpected error occurred while deleting the item. Please try again later.");
+            }
         }
 
         // Add custom business logic methods here

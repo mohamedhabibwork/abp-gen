@@ -1,0 +1,36 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module
+{
+    public abstract class {{.ModuleName}}TestBase : IClassFixture<WebApplicationFactory<Program>>
+    {
+        protected readonly WebApplicationFactory<Program> Factory;
+
+        protected {{.ModuleName}}TestBase(WebApplicationFactory<Program> factory)
+        {
+            Factory = factory.WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Testing");
+            });
+        }
+
+        protected virtual T GetService<T>()
+        {
+            return Factory.Services.GetRequiredService<T>();
+        }
+
+        protected virtual async Task WithScopeAsync(Func<IServiceScope, Task> func)
+        {
+            using (var scope = Factory.Services.CreateScope())
+            {
+                await func(scope);
+            }
+        }
+    }
+}
+

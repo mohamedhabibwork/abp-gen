@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/mohamedhabibwork/abp-gen/internal/detector"
 	"github.com/mohamedhabibwork/abp-gen/internal/generator"
@@ -169,6 +171,171 @@ func runInit() error {
 	return nil
 }
 
+// detectAndPromptMissingFields detects missing required fields from solution structure
+// and prompts user if detection fails
+func detectAndPromptMissingFields(sch *schema.Schema, solutionInfo *detector.SolutionInfo, solutionDetectErr error) error {
+	// Detect solution name
+	if sch.Solution.Name == "" {
+		if solutionDetectErr == nil && solutionInfo != nil && solutionInfo.Name != "" {
+			sch.Solution.Name = solutionInfo.Name
+			if verbose {
+				fmt.Printf("✓ Auto-detected solution name from solution file: %s\n", solutionInfo.Name)
+			}
+		} else {
+			// Try to get from current directory name
+			wd, wdErr := os.Getwd()
+			if wdErr == nil {
+				dirName := filepath.Base(wd)
+				if dirName != "" && dirName != "." && dirName != "/" {
+					sch.Solution.Name = dirName
+					if verbose {
+						fmt.Printf("✓ Auto-detected solution name from current directory: %s\n", dirName)
+					}
+				}
+			}
+
+			// If still empty, prompt user
+			if sch.Solution.Name == "" {
+				fmt.Print("Solution name not found. Please enter solution name: ")
+				var solutionName string
+				fmt.Scanln(&solutionName)
+				if solutionName == "" {
+					return fmt.Errorf("solution name is required")
+				}
+				sch.Solution.Name = solutionName
+			}
+		}
+	}
+
+	// Detect module name from project names
+	if sch.Solution.ModuleName == "" {
+		detectedModuleName := ""
+		if solutionInfo != nil && len(solutionInfo.Projects) > 0 {
+			// Try to extract module name from project names
+			// Pattern: SolutionName.ModuleName.Domain, SolutionName.ModuleName.Application, etc.
+			for _, project := range solutionInfo.Projects {
+				projectName := project.Name
+				// Remove solution name prefix if present
+				if strings.HasPrefix(projectName, sch.Solution.Name+".") {
+					remaining := strings.TrimPrefix(projectName, sch.Solution.Name+".")
+					// Extract module name (part before first dot)
+					parts := strings.Split(remaining, ".")
+					if len(parts) > 0 {
+						candidate := parts[0]
+						// Remove "Module" suffix if present (e.g., "UserModule" -> "User")
+						candidate = strings.TrimSuffix(candidate, "Module")
+						// Check if it's a valid module name (not a layer name)
+						layerNames := map[string]bool{
+							"Domain": true, "Application": true, "HttpApi": true,
+							"EntityFrameworkCore": true, "MongoDB": true,
+						}
+						if !layerNames[candidate] && candidate != "" {
+							detectedModuleName = candidate
+							break
+						}
+					}
+				}
+			}
+		}
+
+		if detectedModuleName != "" {
+			sch.Solution.ModuleName = detectedModuleName
+			if verbose {
+				fmt.Printf("✓ Auto-detected module name from project structure: %s\n", detectedModuleName)
+			}
+		} else {
+			// Prompt user for module name
+			fmt.Print("Module name not found. Please enter module name: ")
+			var moduleNameInput string
+			fmt.Scanln(&moduleNameInput)
+			if moduleNameInput == "" {
+				return fmt.Errorf("module name is required")
+			}
+			sch.Solution.ModuleName = moduleNameInput
+		}
+	}
+
+	// Detect namespace root (defaults to solution name, but can be detected from projects)
+	if sch.Solution.NamespaceRoot == "" {
+		// Will be set to Solution.Name in validator, but we can try to detect from projects
+		if solutionInfo != nil && len(solutionInfo.Projects) > 0 {
+			// Try to extract namespace from first project
+			for _, project := range solutionInfo.Projects {
+				projectName := project.Name
+				// If project name contains dots, extract namespace root
+				if strings.Contains(projectName, ".") {
+					parts := strings.Split(projectName, ".")
+					if len(parts) >= 2 {
+						// Take first part as namespace root
+						candidate := parts[0]
+						if candidate != "" && candidate != sch.Solution.Name {
+							sch.Solution.NamespaceRoot = candidate
+							if verbose {
+								fmt.Printf("✓ Auto-detected namespace root from project: %s\n", candidate)
+							}
+							break
+						}
+					}
+				}
+			}
+		}
+		// If still empty, will default to Solution.Name in validator
+	}
+
+	// Detect ABP version from solution projects
+	if sch.Solution.ABPVersion == "" {
+		if solutionInfo != nil && len(solutionInfo.Projects) > 0 {
+			abpVer, _ := detector.ScanProjectsForVersions(solutionInfo)
+			if abpVer != "" {
+				sch.Solution.ABPVersion = abpVer + ".0" // Convert "8" to "8.0"
+				if verbose {
+					fmt.Printf("✓ Auto-detected ABP version: %s\n", sch.Solution.ABPVersion)
+				}
+			}
+		}
+		// If still empty, will default to "9.0" in validator
+	}
+
+	// Detect primary key type (hard to detect, will default to "Guid" in validator)
+	// Can check project files for entity base classes, but that's complex
+	// For now, we'll let it default
+
+	// Detect DB provider (can check for MongoDB projects)
+	if sch.Solution.DBProvider == "" {
+		if solutionInfo != nil {
+			hasMongoDB := false
+			hasEFCore := false
+			for _, project := range solutionInfo.Projects {
+				if project.Type == detector.ProjectTypeMongoDB {
+					hasMongoDB = true
+				}
+				if project.Type == detector.ProjectTypeEntityFrameworkCore {
+					hasEFCore = true
+				}
+			}
+			if hasMongoDB && hasEFCore {
+				sch.Solution.DBProvider = "both"
+				if verbose {
+					fmt.Printf("✓ Auto-detected database provider: both (EF Core and MongoDB)\n")
+				}
+			} else if hasMongoDB {
+				sch.Solution.DBProvider = "mongodb"
+				if verbose {
+					fmt.Printf("✓ Auto-detected database provider: mongodb\n")
+				}
+			} else if hasEFCore {
+				sch.Solution.DBProvider = "efcore"
+				if verbose {
+					fmt.Printf("✓ Auto-detected database provider: efcore\n")
+				}
+			}
+		}
+		// If still empty, will default to "efcore" in validator
+	}
+
+	return nil
+}
+
 // applySchemaOverrides applies CLI flag values to schema, overriding schema file values.
 // CLI flags take precedence over schema file values when provided.
 func applySchemaOverrides(sch *schema.Schema) {
@@ -255,19 +422,38 @@ func runGenerate() error {
 	// Apply CLI flag overrides to schema (CLI flags take precedence)
 	applySchemaOverrides(sch)
 
+	// Try to detect solution and all missing information before validation
+	var solutionInfo *detector.SolutionInfo
+	var solutionDetectErr error
+
+	// Try to detect solution first
+	fmt.Println("\nDetecting solution structure...")
+	if solutionPath != "" {
+		solutionInfo, solutionDetectErr = detector.ParseSolution(solutionPath)
+	} else {
+		solutionInfo, solutionDetectErr = detector.FindSolution(".")
+	}
+
+	// Detect and prompt for all missing required fields
+	if err := detectAndPromptMissingFields(sch, solutionInfo, solutionDetectErr); err != nil {
+		return err
+	}
+
 	// Validate schema
 	if err := sch.Validate(); err != nil {
 		return fmt.Errorf("schema validation failed: %w", err)
 	}
 
-	// Detect solution
-	fmt.Println("\nDetecting solution structure...")
-	var solutionInfo *detector.SolutionInfo
-
-	if solutionPath != "" {
-		solutionInfo, err = detector.ParseSolution(solutionPath)
+	// Detect solution if not already detected (for use in rest of function)
+	if solutionInfo == nil {
+		if solutionPath != "" {
+			solutionInfo, err = detector.ParseSolution(solutionPath)
+		} else {
+			solutionInfo, err = detector.FindSolution(".")
+		}
 	} else {
-		solutionInfo, err = detector.FindSolution(".")
+		// Reuse the error from earlier detection attempt
+		err = solutionDetectErr
 	}
 
 	// If no solution found, offer to create one

@@ -1,0 +1,93 @@
+using System;
+using System.Threading.Tasks;
+using Shouldly;
+using Xunit;
+using Volo.Abp.Domain.Entities;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module.Repositories
+{
+    public class {{.EntityName}}RepositoryTests : {{.ModuleName}}TestBase
+    {
+        private readonly I{{.EntityName}}Repository _repository;
+
+        public {{.EntityName}}RepositoryTests()
+        {
+            _repository = GetRequiredService<I{{.EntityName}}Repository>();
+        }
+
+        [Fact]
+        public async Task Should_Create_{{.EntityName}}()
+        {
+            // Arrange
+            {{- if eq .PrimaryKeyType "Guid"}}
+            var id = GuidGenerator.Create();
+            {{- else}}
+            var id = 0; // Will be auto-generated
+            {{- end}}
+            var entity = new {{.EntityName}}(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+
+            // Act
+            await _repository.InsertAsync(entity, autoSave: true);
+
+            // Assert
+            entity.Id.ShouldNotBeDefault();
+            var found = await _repository.GetAsync(entity.Id);
+            found.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task Should_Update_{{.EntityName}}()
+        {
+            // Arrange
+            {{- if eq .PrimaryKeyType "Guid"}}
+            var id = GuidGenerator.Create();
+            {{- else}}
+            var id = 0;
+            {{- end}}
+            var entity = new {{.EntityName}}(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+            await _repository.InsertAsync(entity, autoSave: true);
+
+            // Act
+            // TODO: Update entity properties
+            await _repository.UpdateAsync(entity, autoSave: true);
+
+            // Assert
+            var updated = await _repository.GetAsync(entity.Id);
+            updated.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task Should_Delete_{{.EntityName}}()
+        {
+            // Arrange
+            {{- if eq .PrimaryKeyType "Guid"}}
+            var id = GuidGenerator.Create();
+            {{- else}}
+            var id = 0;
+            {{- end}}
+            var entity = new {{.EntityName}}(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+            await _repository.InsertAsync(entity, autoSave: true);
+
+            // Act
+            await _repository.DeleteAsync(entity, autoSave: true);
+
+            // Assert
+            await Should.ThrowAsync<EntityNotFoundException>(async () =>
+            {
+                await _repository.GetAsync(entity.Id);
+            });
+        }
+    }
+}
+

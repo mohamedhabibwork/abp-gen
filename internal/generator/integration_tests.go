@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/mohamedhabibwork/abp-gen/internal/detector"
@@ -38,7 +39,12 @@ func (g *IntegrationTestGenerator) Generate(sch *schema.Schema, entity *schema.E
 	}
 
 	// Generate test base class (once)
+	// Skip if template is not available (test templates are optional)
 	if err := g.generateTestBase(sch, paths); err != nil {
+		// If template not found, skip test generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip test generation if templates don't exist
+		}
 		return fmt.Errorf("failed to generate test base: %w", err)
 	}
 
@@ -65,19 +71,41 @@ func (g *IntegrationTestGenerator) Generate(sch *schema.Schema, entity *schema.E
 func (g *IntegrationTestGenerator) generateTestBase(sch *schema.Schema, paths *detector.LayerPaths) error {
 	var tmpl *template.Template
 	var err error
+	templateName := ""
 
 	// Choose template based on target framework
 	switch sch.Solution.TargetFramework {
-	case schema.TargetASPNETCore9:
-		tmpl, err = g.tmplLoader.Load("test_base_aspnetcore.tmpl")
-	case schema.TargetABP8Microservice:
-		tmpl, err = g.tmplLoader.Load("test_base_abp_microservice.tmpl")
+	case schema.TargetASPNETCore9, schema.TargetASPNETCore10:
+		templateName = "test_base_aspnetcore.tmpl"
+	case schema.TargetABP8Microservice, schema.TargetABP9Microservice, schema.TargetABP10Microservice:
+		templateName = "test_base_abp_microservice.tmpl"
+	case schema.TargetABP8Monolith, schema.TargetABP9Monolith, schema.TargetABP10Monolith:
+		// For monolith, try microservice template as fallback, then generic ABP template
+		templateName = "test_base_abp_microservice.tmpl"
+		tmpl, err = g.tmplLoader.Load(templateName)
+		if err != nil {
+			// Fallback to generic ABP template
+			templateName = "test_base_abp.tmpl"
+			tmpl, err = g.tmplLoader.Load(templateName)
+		}
 	default:
-		tmpl, err = g.tmplLoader.Load("test_base_abp.tmpl")
+		// For auto or unknown, try microservice template first
+		templateName = "test_base_abp_microservice.tmpl"
+		tmpl, err = g.tmplLoader.Load(templateName)
+		if err != nil {
+			// Fallback to generic ABP template
+			templateName = "test_base_abp.tmpl"
+			tmpl, err = g.tmplLoader.Load(templateName)
+		}
+	}
+
+	// Load template if not already loaded
+	if tmpl == nil {
+		tmpl, err = g.tmplLoader.Load(templateName)
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to load test base template: %w", err)
+		return fmt.Errorf("failed to load test base template '%s': %w", templateName, err)
 	}
 
 	data := map[string]interface{}{

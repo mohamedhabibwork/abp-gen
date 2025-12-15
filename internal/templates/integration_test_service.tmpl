@@ -1,0 +1,131 @@
+using System;
+using System.Threading.Tasks;
+using Shouldly;
+using Xunit;
+using Volo.Abp.Domain.Entities;
+using {{.NamespaceRoot}}.Application.Contracts.{{.EntityName}}Module;
+using {{.NamespaceRoot}}.Application.Contracts.Services.{{.ModuleName}}Module;
+using Volo.Abp.Application.Dtos;
+
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module.Services
+{
+    public class {{.EntityName}}AppServiceTests : {{.ModuleName}}TestBase
+    {
+        private readonly I{{.EntityName}}AppService _appService;
+
+        public {{.EntityName}}AppServiceTests()
+        {
+            _appService = GetRequiredService<I{{.EntityName}}AppService>();
+        }
+
+        [Fact]
+        public async Task Should_Create_{{.EntityName}}()
+        {
+            // Arrange
+            var input = new Create{{.EntityName}}Dto
+            {
+                {{- range .Properties}}
+                {{- if not .IsForeignKey}}
+                // {{.Name}} = /* set value */
+                {{- end}}
+                {{- end}}
+            };
+
+            // Act
+            var result = await _appService.CreateAsync(input);
+
+            // Assert
+            result.ShouldNotBeNull();
+            result.Id.ShouldNotBeDefault();
+        }
+
+        [Fact]
+        public async Task Should_Get_{{.EntityName}}_By_Id()
+        {
+            // Arrange
+            var createInput = new Create{{.EntityName}}Dto
+            {
+                {{- range .Properties}}
+                {{- if not .IsForeignKey}}
+                // {{.Name}} = /* set value */
+                {{- end}}
+                {{- end}}
+            };
+            var created = await _appService.CreateAsync(createInput);
+
+            // Act
+            var result = await _appService.GetAsync(created.Id);
+
+            // Assert
+            result.ShouldNotBeNull();
+            result.Id.ShouldBe(created.Id);
+        }
+
+        [Fact]
+        public async Task Should_Get_{{.EntityName}}_List()
+        {
+            // Act
+            var result = await _appService.GetListAsync(new PagedAndSortedResultRequestDto());
+
+            // Assert
+            result.ShouldNotBeNull();
+            result.Items.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task Should_Update_{{.EntityName}}()
+        {
+            // Arrange
+            var createInput = new Create{{.EntityName}}Dto
+            {
+                {{- range .Properties}}
+                {{- if not .IsForeignKey}}
+                // {{.Name}} = /* set value */
+                {{- end}}
+                {{- end}}
+            };
+            var created = await _appService.CreateAsync(createInput);
+
+            var updateInput = new Update{{.EntityName}}Dto
+            {
+                {{- range .Properties}}
+                {{- if not .IsForeignKey}}
+                // {{.Name}} = /* set updated value */
+                {{- end}}
+                {{- end}}
+            };
+
+            // Act
+            var result = await _appService.UpdateAsync(created.Id, updateInput);
+
+            // Assert
+            result.ShouldNotBeNull();
+            result.Id.ShouldBe(created.Id);
+        }
+
+        [Fact]
+        public async Task Should_Delete_{{.EntityName}}()
+        {
+            // Arrange
+            var createInput = new Create{{.EntityName}}Dto
+            {
+                {{- range .Properties}}
+                {{- if not .IsForeignKey}}
+                // {{.Name}} = /* set value */
+                {{- end}}
+                {{- end}}
+            };
+            var created = await _appService.CreateAsync(createInput);
+
+            // Act
+            await _appService.DeleteAsync(created.Id);
+
+            // Assert
+            await Should.ThrowAsync<EntityNotFoundException>(async () =>
+            {
+                await _appService.GetAsync(created.Id);
+            });
+        }
+    }
+}
+

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/mohamedhabibwork/abp-gen/internal/detector"
@@ -51,16 +52,22 @@ func (g *DomainEventsGenerator) Generate(sch *schema.Schema, entity *schema.Enti
 func (g *DomainEventsGenerator) generateEventClass(sch *schema.Schema, entity *schema.Entity, event *schema.DomainEvent, paths *detector.LayerPaths) error {
 	var tmpl *template.Template
 	var err error
+	templateName := ""
 
 	// Choose template based on event type
 	if event.Type == "domain" {
-		tmpl, err = g.tmplLoader.Load("domain_event.tmpl")
+		templateName = "domain_event.tmpl"
 	} else {
-		tmpl, err = g.tmplLoader.Load("distributed_event.tmpl")
+		templateName = "distributed_event.tmpl"
 	}
 
+	tmpl, err = g.tmplLoader.Load(templateName)
 	if err != nil {
-		return fmt.Errorf("failed to load event template: %w", err)
+		// If template not found, skip event generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip event generation if template doesn't exist
+		}
+		return fmt.Errorf("failed to load event template '%s': %w", templateName, err)
 	}
 
 	data := map[string]interface{}{
@@ -97,21 +104,27 @@ func (g *DomainEventsGenerator) generateEventClass(sch *schema.Schema, entity *s
 func (g *DomainEventsGenerator) generateEventHandler(sch *schema.Schema, entity *schema.Entity, event *schema.DomainEvent, handler *schema.EventHandler, paths *detector.LayerPaths) error {
 	var tmpl *template.Template
 	var err error
+	templateName := ""
 
 	// Choose template based on handler type
 	switch handler.HandlerType {
 	case "local":
-		tmpl, err = g.tmplLoader.Load("event_handler_local.tmpl")
+		templateName = "event_handler_local.tmpl"
 	case "distributed":
-		tmpl, err = g.tmplLoader.Load("event_handler_distributed.tmpl")
+		templateName = "event_handler_distributed.tmpl"
 	case "integration":
-		tmpl, err = g.tmplLoader.Load("event_handler_integration.tmpl")
+		templateName = "event_handler_integration.tmpl"
 	default:
-		tmpl, err = g.tmplLoader.Load("event_handler_local.tmpl")
+		templateName = "event_handler_local.tmpl"
 	}
 
+	tmpl, err = g.tmplLoader.Load(templateName)
 	if err != nil {
-		return fmt.Errorf("failed to load event handler template: %w", err)
+		// If template not found, skip handler generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip handler generation if template doesn't exist
+		}
+		return fmt.Errorf("failed to load event handler template '%s': %w", templateName, err)
 	}
 
 	data := map[string]interface{}{

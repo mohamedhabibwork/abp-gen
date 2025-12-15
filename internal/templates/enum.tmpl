@@ -1,0 +1,14 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace {{.NamespaceRoot}}.Domain.Shared.{{.ModuleName}}Module
+{
+    public enum {{.EnumName}} : {{.UnderlyingType}}
+    {
+{{- range $index, $value := .Values}}
+        [Display(Name = "{{if $value.LocalizationKey}}{{$value.LocalizationKey}}{{else}}{{$.EnumName}}.{{$value.Name}}{{end}}")]
+        {{$value.Name}} = {{$value.Value}}{{if $value.Description}} // {{$value.Description}}{{end}}{{if ne $index (sub (len $.Values) 1)}},{{end}}
+{{- end}}
+    }
+}
+

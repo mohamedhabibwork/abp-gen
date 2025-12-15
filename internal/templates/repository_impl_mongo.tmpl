@@ -1,0 +1,41 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using MongoDB.Driver;
+using MongoDB.Driver.Linq;
+using Volo.Abp.Domain.Repositories.MongoDB;
+using Volo.Abp.MongoDB;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+
+namespace {{.NamespaceRoot}}.MongoDB.Repositories.{{.ModuleName}}Module
+{
+    public class {{.EntityName}}CustomRepository : Mongo{{.EntityName}}Repository, I{{.EntityName}}CustomRepository
+    {
+        public {{.EntityName}}CustomRepository(IMongoDbContextProvider<{{.ModuleName}}MongoDbContext> dbContextProvider)
+            : base(dbContextProvider)
+        {
+        }
+
+{{- range .Methods}}
+        public async {{.ReturnType}} {{.Name}}({{range $index, $param := .Parameters}}{{if $index}}, {{end}}{{$param.Type}} {{$param.Name}}{{end}})
+        {
+            var queryable = await GetMongoQueryableAsync();
+            
+            {{- if .QueryHint}}
+            // {{.QueryHint}}
+            {{- end}}
+            
+            // TODO: Implement custom query logic
+            // Example:
+            // return await queryable
+            //     .Where(/* your conditions */)
+            //     .ToListAsync();
+            
+            throw new NotImplementedException("{{.Name}} is not yet implemented");
+        }
+{{- end}}
+    }
+}
+

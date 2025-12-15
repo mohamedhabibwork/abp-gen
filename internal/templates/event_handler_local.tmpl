@@ -1,0 +1,44 @@
+using System.Threading.Tasks;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities.Events;
+using Volo.Abp.EventBus;
+using {{.NamespaceRoot}}.Domain.Events.{{.ModuleName}}Module;
+using Microsoft.Extensions.Logging;
+
+namespace {{.NamespaceRoot}}.Application.EventHandlers.{{.ModuleName}}Module
+{
+    public class {{.HandlerName}} : ILocalEventHandler<{{.EventName}}>, ITransientDependency
+    {
+        private readonly ILogger<{{.HandlerName}}> _logger;
+
+        public {{.HandlerName}}(ILogger<{{.HandlerName}}> logger)
+        {
+            _logger = logger;
+        }
+
+        public async Task HandleEventAsync({{.EventName}} eventData)
+        {
+            _logger.LogInformation("Handling local event {{.EventName}}");
+
+            try
+            {
+                {{- if .Action}}
+                // {{.Action}}
+                {{- else}}
+                // Add your event handling logic here
+                {{- end}}
+                // Example: Update related entities, send notifications, etc.
+
+                await Task.CompletedTask;
+                
+                _logger.LogInformation("Successfully handled local event {{.EventName}}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling local event {{.EventName}}");
+                throw; // Re-throw for local events to allow transaction rollback
+            }
+        }
+    }
+}
+

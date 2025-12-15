@@ -1,0 +1,35 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Volo.Abp.Application.Dtos;
+
+namespace {{.NamespaceRoot}}.Domain.Shared.{{.ModuleName}}Module
+{
+    public static class {{.EnumName}}Extensions
+    {
+        public static List<NameValueDto<int>> GetLookupList()
+        {
+            return Enum.GetValues(typeof({{.EnumName}}))
+                .Cast<{{.EnumName}}>()
+                .Select(e => new NameValueDto<int>
+                {
+                    Name = e.ToString(),
+                    Value = (int)e
+                })
+                .ToList();
+        }
+
+        public static string GetDisplayName(this {{.EnumName}} value)
+        {
+            var field = value.GetType().GetField(value.ToString());
+            if (field == null) return value.ToString();
+
+            var attribute = field.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
+                .FirstOrDefault() as System.ComponentModel.DataAnnotations.DisplayAttribute;
+
+            return attribute?.Name ?? value.ToString();
+        }
+    }
+}
+

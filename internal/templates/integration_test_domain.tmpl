@@ -1,0 +1,107 @@
+using System;
+using System.Threading.Tasks;
+using Shouldly;
+using Xunit;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Managers.{{.ModuleName}}Module;
+{{- if .Manager}}
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+{{- end}}
+
+namespace {{.NamespaceRoot}}.Tests.{{.ModuleName}}Module.Domain
+{
+    public class {{.EntityName}}DomainTests : {{.ModuleName}}TestBase
+    {
+        {{- if .Manager}}
+        private readonly {{.EntityName}}Manager _manager;
+        private readonly I{{.EntityName}}Repository _repository;
+
+        public {{.EntityName}}DomainTests()
+        {
+            _manager = GetRequiredService<{{.EntityName}}Manager>();
+            _repository = GetRequiredService<I{{.EntityName}}Repository>();
+        }
+        {{- else}}
+        public {{.EntityName}}DomainTests()
+        {
+        }
+        {{- end}}
+
+        [Fact]
+        public async Task Should_Create_{{.EntityName}}_Entity()
+        {
+            // Arrange
+            {{- if eq .PrimaryKeyType "Guid"}}
+            var id = GuidGenerator.Create();
+            {{- else}}
+            var id = 0;
+            {{- end}}
+
+            // Act
+            {{- if .Manager}}
+            var entity = await _manager.CreateAsync(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+            {{- else}}
+            var entity = new {{.EntityName}}(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+            {{- end}}
+
+            // Assert
+            entity.ShouldNotBeNull();
+            entity.Id.ShouldBe(id);
+        }
+
+        {{- if .Manager}}
+        [Fact]
+        public async Task Should_Update_{{.EntityName}}_Via_Manager()
+        {
+            // Arrange
+            {{- if eq .PrimaryKeyType "Guid"}}
+            var id = GuidGenerator.Create();
+            {{- else}}
+            var id = 0;
+            {{- end}}
+            var entity = await _manager.CreateAsync(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+            await _repository.InsertAsync(entity, autoSave: true);
+
+            // Act
+            await _manager.UpdateAsync(
+                entity{{range .Properties}}{{if not .IsForeignKey}},
+                /* updated {{.Name}} */{{end}}{{end}}
+            );
+
+            // Assert
+            entity.ShouldNotBeNull();
+        }
+        {{- end}}
+
+        {{- if .DomainEvents}}
+        [Fact]
+        public async Task Should_Publish_Domain_Events()
+        {
+            // Arrange
+            {{- if eq .PrimaryKeyType "Guid"}}
+            var id = GuidGenerator.Create();
+            {{- else}}
+            var id = 0;
+            {{- end}}
+            var entity = new {{.EntityName}}(
+                id{{range .Properties}}{{if not .IsForeignKey}},
+                /* {{.Name}} */{{end}}{{end}}
+            );
+
+            // Act & Assert
+            // TODO: Verify domain events are published
+            // This depends on your domain event implementation
+        }
+        {{- end}}
+    }
+}
+

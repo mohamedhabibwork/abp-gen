@@ -1,0 +1,44 @@
+using System;
+using System.Threading.Tasks;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.EventBus.Distributed;
+using {{.NamespaceRoot}}.Events.{{.ModuleName}}Module;
+using Microsoft.Extensions.Logging;
+
+namespace {{.NamespaceRoot}}.Application.EventHandlers.{{.ModuleName}}Module
+{
+    public class {{.HandlerName}} : IDistributedEventHandler<{{.EventName}}Eto>, ITransientDependency
+    {
+        private readonly ILogger<{{.HandlerName}}> _logger;
+
+        public {{.HandlerName}}(ILogger<{{.HandlerName}}> logger)
+        {
+            _logger = logger;
+        }
+
+        public async Task HandleEventAsync({{.EventName}}Eto eventData)
+        {
+            _logger.LogInformation("Handling integration event {{.EventName}}");
+
+            try
+            {
+                {{- if .Action}}
+                // {{.Action}}
+                {{- else}}
+                // Add your integration event handling logic here
+                {{- end}}
+                // Example: Call external services, update external systems, etc.
+
+                await Task.CompletedTask;
+                
+                _logger.LogInformation("Successfully handled integration event {{.EventName}}");
+            }
+            catch (Exception ex)
+            {
+                // Log and swallow - don't break event bus
+                _logger.LogError(ex, "Error handling integration event {{.EventName}}");
+            }
+        }
+    }
+}
+

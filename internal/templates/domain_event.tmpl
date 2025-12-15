@@ -1,0 +1,31 @@
+using System;
+using Volo.Abp.Domain.Entities.Events;
+
+namespace {{.NamespaceRoot}}.Domain.Events.{{.ModuleName}}Module
+{
+    /// <summary>
+    {{- if .Description}}
+    /// {{.Description}}
+    {{- else}}
+    /// Domain event: {{.EventName}}
+    {{- end}}
+    /// </summary>
+    public class {{.EventName}} : DomainEvent
+    {
+{{- range .Payload}}
+        public {{.Type}} {{.Name}} { get; set; }
+{{- end}}
+
+        public {{.EventName}}()
+        {
+        }
+
+        public {{.EventName}}({{range $index, $prop := .Payload}}{{if $index}}, {{end}}{{$prop.Type}} {{$prop.Name | lowerFirst}}{{end}})
+        {
+{{- range .Payload}}
+            {{.Name}} = {{.Name | lowerFirst}};
+{{- end}}
+        }
+    }
+}
+

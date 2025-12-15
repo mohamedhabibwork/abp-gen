@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/mohamedhabibwork/abp-gen/internal/detector"
 	"github.com/mohamedhabibwork/abp-gen/internal/schema"
@@ -56,6 +57,10 @@ func (g *CustomRepositoryGenerator) Generate(sch *schema.Schema, entity *schema.
 func (g *CustomRepositoryGenerator) generateInterface(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("repository_custom.tmpl")
 	if err != nil {
+		// If template not found, skip custom repository generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip custom repository generation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load repository_custom template: %w", err)
 	}
 
@@ -84,6 +89,10 @@ func (g *CustomRepositoryGenerator) generateInterface(sch *schema.Schema, entity
 func (g *CustomRepositoryGenerator) generateEFCoreImplementation(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("repository_impl_ef.tmpl")
 	if err != nil {
+		// If template not found, skip EF Core implementation generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip EF Core implementation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load repository_impl_ef template: %w", err)
 	}
 
@@ -112,6 +121,10 @@ func (g *CustomRepositoryGenerator) generateEFCoreImplementation(sch *schema.Sch
 func (g *CustomRepositoryGenerator) generateMongoDBImplementation(sch *schema.Schema, entity *schema.Entity, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("repository_impl_mongo.tmpl")
 	if err != nil {
+		// If template not found, skip MongoDB implementation generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip MongoDB implementation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load repository_impl_mongo template: %w", err)
 	}
 

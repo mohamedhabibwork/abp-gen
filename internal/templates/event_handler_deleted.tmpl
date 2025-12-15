@@ -20,10 +20,20 @@ namespace {{.NamespaceRoot}}.Application.EventHandlers.{{.ModuleName}}Module
         {
             _logger.LogInformation("Handling {{.EntityName}} {{.EventType}} event. EntityId: {EntityId}", eventData.Id);
 
-            // Add your event handling logic here
-            // Example: Clean up related data, invalidate cache, send notifications, etc.
+            try
+            {
+                // Add your event handling logic here
+                // Example: Clean up related data, invalidate cache, send notifications, etc.
 
-            await Task.CompletedTask;
+                await Task.CompletedTask;
+                
+                _logger.LogInformation("Successfully handled {{.EntityName}} {{.EventType}} event. EntityId: {EntityId}", eventData.Id);
+            }
+            catch (Exception ex)
+            {
+                // Log and swallow - don't break event bus
+                _logger.LogError(ex, "Error handling {{.EntityName}} {{.EventType}} event. EntityId: {EntityId}", eventData.Id);
+            }
         }
     }
 }

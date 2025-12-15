@@ -10,6 +10,10 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.AspNetCore.Authorization;
 using static {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}}Module.{{.ModuleName}}Permissions;
 using Volo.Abp;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Validation;
+using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace {{.NamespaceRoot}}.HttpApi.Controllers.{{.ModuleName}}Module
 {
@@ -17,48 +21,196 @@ namespace {{.NamespaceRoot}}.HttpApi.Controllers.{{.ModuleName}}Module
     public class {{.EntityName}}Controller : AbpControllerBase
     {
         private readonly I{{.EntityName}}AppService _appService;
+        private readonly ILogger<{{.EntityName}}Controller> _logger;
 
-        public {{.EntityName}}Controller(I{{.EntityName}}AppService appService)
+        public {{.EntityName}}Controller(
+            I{{.EntityName}}AppService appService,
+            ILogger<{{.EntityName}}Controller> logger)
         {
             _appService = appService;
+            _logger = logger;
         }
 
         [HttpGet]
         [Route("{id}")]
         [Authorize({{.EntityName}}Management.Default)]
-        public virtual Task<{{.EntityName}}Dto> GetAsync({{.PrimaryKeyType}} id)
+        public virtual async Task<{{.EntityName}}Dto> GetAsync({{.PrimaryKeyType}} id)
         {
-            return _appService.GetAsync(id);
+            _logger.LogInformation("API call: GetAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+            
+            try
+            {
+                var result = await _appService.GetAsync(id);
+                _logger.LogInformation("API call successful: GetAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in API call GetAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred. Please try again later.");
+            }
         }
 
         [HttpGet]
         [Authorize({{.EntityName}}Management.Default)]
-        public virtual Task<PagedResultDto<{{.EntityName}}Dto>> GetListAsync([FromQuery] PagedAndSortedResultRequestDto input)
+        public virtual async Task<PagedResultDto<{{.EntityName}}Dto>> GetListAsync([FromQuery] PagedAndSortedResultRequestDto input)
         {
-            return _appService.GetListAsync(input);
+            _logger.LogInformation("API call: GetListAsync for {EntityName} with SkipCount: {SkipCount}, MaxResultCount: {MaxResultCount}", 
+                "{{.EntityName}}", input.SkipCount, input.MaxResultCount);
+            
+            try
+            {
+                var result = await _appService.GetListAsync(input);
+                _logger.LogInformation("API call successful: GetListAsync for {EntityName} with {TotalCount} items", 
+                    "{{.EntityName}}", result.TotalCount);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in API call GetListAsync for {EntityName}", "{{.EntityName}}");
+                throw new UserFriendlyException("An unexpected error occurred. Please try again later.");
+            }
         }
 
         [HttpPost]
         [Authorize({{.EntityName}}Management.Create)]
-        public virtual Task<{{.EntityName}}Dto> CreateAsync(Create{{.EntityName}}Dto input)
+        public virtual async Task<{{.EntityName}}Dto> CreateAsync(Create{{.EntityName}}Dto input)
         {
-            return _appService.CreateAsync(input);
+            _logger.LogInformation("API call: CreateAsync for {EntityName}", "{{.EntityName}}");
+            
+            try
+            {
+                var result = await _appService.CreateAsync(input);
+                _logger.LogInformation("API call successful: CreateAsync for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", result.Id);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in API call CreateAsync for {EntityName}", "{{.EntityName}}");
+                throw new UserFriendlyException("An unexpected error occurred. Please try again later.");
+            }
         }
 
         [HttpPut]
         [Route("{id}")]
         [Authorize({{.EntityName}}Management.Update)]
-        public virtual Task<{{.EntityName}}Dto> UpdateAsync({{.PrimaryKeyType}} id, Update{{.EntityName}}Dto input)
+        public virtual async Task<{{.EntityName}}Dto> UpdateAsync({{.PrimaryKeyType}} id, Update{{.EntityName}}Dto input)
         {
-            return _appService.UpdateAsync(id, input);
+            _logger.LogInformation("API call: UpdateAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+            
+            try
+            {
+                var result = await _appService.UpdateAsync(id, input);
+                _logger.LogInformation("API call successful: UpdateAsync for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", id);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in API call UpdateAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred. Please try again later.");
+            }
         }
 
         [HttpDelete]
         [Route("{id}")]
         [Authorize({{.EntityName}}Management.Delete)]
-        public virtual Task DeleteAsync({{.PrimaryKeyType}} id)
+        public virtual async Task DeleteAsync({{.PrimaryKeyType}} id)
         {
-            return _appService.DeleteAsync(id);
+            _logger.LogInformation("API call: DeleteAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+            
+            try
+            {
+                await _appService.DeleteAsync(id);
+                _logger.LogInformation("API call successful: DeleteAsync for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", id);
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in API call DeleteAsync for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred. Please try again later.");
+            }
         }
     }
 }

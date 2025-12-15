@@ -1,8 +1,8 @@
 {
   "solution": {
-    "name": "SDDUMP",
+    "name": "ECommerce",
     "moduleName": "ProductService",
-    "namespaceRoot": "SDDUMP.ProductService",
+    "namespaceRoot": "ECommerce.ProductService",
     "abpVersion": "9.0",
     "targetFramework": "abp8-monolith",
     "primaryKeyType": "Guid",
@@ -27,7 +27,14 @@
           "type": "string",
           "isRequired": true,
           "maxLength": 100,
-          "nullable": false
+          "minLength": 3,
+          "nullable": false,
+          "validationRules": [
+            {
+              "type": "Required",
+              "errorMessage": "Category name is required"
+            }
+          ]
         },
         {
           "name": "Description",
@@ -35,6 +42,20 @@
           "isRequired": false,
           "maxLength": 500,
           "nullable": true
+        },
+        {
+          "name": "DisplayOrder",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "0"
+        },
+        {
+          "name": "IsActive",
+          "type": "bool",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "true"
         }
       ]
     },
@@ -74,6 +95,25 @@
             ],
             "isAsync": true,
             "description": "Gets products by category"
+          },
+          {
+            "name": "GetLowStockProductsAsync",
+            "returnType": "Task<List<Product>>",
+            "parameters": [
+              {"name": "threshold", "type": "int"}
+            ],
+            "isAsync": true,
+            "queryHint": "WHERE Stock <= threshold",
+            "description": "Gets products with stock below threshold"
+          },
+          {
+            "name": "GetProductBySkuAsync",
+            "returnType": "Task<Product>",
+            "parameters": [
+              {"name": "sku", "type": "string"}
+            ],
+            "isAsync": true,
+            "description": "Gets a product by SKU"
           }
         ]
       },
@@ -81,9 +121,11 @@
         {
           "name": "ProductCreated",
           "type": "domain",
+          "description": "Raised when a new product is created",
           "payload": [
             {"name": "ProductId", "type": "Guid"},
-            {"name": "ProductName", "type": "string"}
+            {"name": "ProductName", "type": "string"},
+            {"name": "Price", "type": "decimal"}
           ],
           "handlers": [
             {
@@ -96,10 +138,30 @@
         {
           "name": "ProductPriceChanged",
           "type": "distributed",
+          "description": "Raised when product price is updated",
           "payload": [
             {"name": "ProductId", "type": "Guid"},
             {"name": "OldPrice", "type": "decimal"},
-            {"name": "NewPrice", "type": "decimal"}
+            {"name": "NewPrice", "type": "decimal"},
+            {"name": "ChangedBy", "type": "Guid"}
+          ],
+          "handlers": [
+            {
+              "name": "ProductPriceChangedHandler",
+              "handlerType": "distributed",
+              "action": "Update cache and notify other services"
+            }
+          ]
+        },
+        {
+          "name": "ProductStockUpdated",
+          "type": "distributed",
+          "description": "Raised when product stock is updated",
+          "payload": [
+            {"name": "ProductId", "type": "Guid"},
+            {"name": "OldStock", "type": "int"},
+            {"name": "NewStock", "type": "int"},
+            {"name": "ChangeReason", "type": "string"}
           ]
         }
       ],
@@ -122,7 +184,45 @@
           "name": "Price",
           "type": "decimal",
           "isRequired": true,
+          "nullable": false,
+          "validationRules": [
+            {
+              "type": "Range",
+              "value": "0.01,999999.99",
+              "errorMessage": "Price must be between 0.01 and 999999.99"
+            }
+          ]
+        },
+        {
+          "name": "CostPrice",
+          "type": "decimal",
+          "isRequired": false,
+          "nullable": true
+        },
+        {
+          "name": "SKU",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 50,
           "nullable": false
+        },
+        {
+          "name": "Weight",
+          "type": "decimal",
+          "isRequired": false,
+          "nullable": true
+        },
+        {
+          "name": "CreatedDate",
+          "type": "DateTime",
+          "isRequired": true,
+          "nullable": false
+        },
+        {
+          "name": "LastModifiedDate",
+          "type": "DateTime",
+          "isRequired": false,
+          "nullable": true
         },
         {
           "name": "Stock",
@@ -226,6 +326,7 @@
           "type": "string",
           "isRequired": true,
           "maxLength": 200,
+          "minLength": 2,
           "nullable": false
         },
         {
@@ -239,6 +340,40 @@
               "type": "RegularExpression",
               "value": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
               "errorMessage": "Invalid email format"
+            }
+          ]
+        },
+        {
+          "name": "PhoneNumber",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 20,
+          "nullable": true
+        },
+        {
+          "name": "Address",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 500,
+          "nullable": true
+        },
+        {
+          "name": "IsActive",
+          "type": "bool",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "true"
+        },
+        {
+          "name": "Rating",
+          "type": "decimal",
+          "isRequired": false,
+          "nullable": true,
+          "validationRules": [
+            {
+              "type": "Range",
+              "value": "0,5",
+              "errorMessage": "Rating must be between 0 and 5"
             }
           ]
         }
@@ -261,7 +396,27 @@
           "name": "Rating",
           "type": "int",
           "isRequired": true,
+          "nullable": false,
+          "validationRules": [
+            {
+              "type": "Range",
+              "value": "1,5",
+              "errorMessage": "Rating must be between 1 and 5"
+            }
+          ]
+        },
+        {
+          "name": "ReviewDate",
+          "type": "DateTime",
+          "isRequired": true,
           "nullable": false
+        },
+        {
+          "name": "IsApproved",
+          "type": "bool",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "false"
         },
         {
           "name": "Comment",
@@ -283,6 +438,43 @@
       "name": "Order",
       "tableName": "Orders",
       "entityType": "FullAuditedAggregateRoot",
+      "enums": [
+        {
+          "name": "OrderStatus",
+          "underlyingType": "int",
+          "useLocalization": true,
+          "generateLookup": true,
+          "values": [
+            {"name": "Pending", "value": "0", "localizationKey": "OrderStatus.Pending"},
+            {"name": "Processing", "value": "1", "localizationKey": "OrderStatus.Processing"},
+            {"name": "Shipped", "value": "2", "localizationKey": "OrderStatus.Shipped"},
+            {"name": "Delivered", "value": "3", "localizationKey": "OrderStatus.Delivered"},
+            {"name": "Cancelled", "value": "4", "localizationKey": "OrderStatus.Cancelled"}
+          ]
+        }
+      ],
+      "domainEvents": [
+        {
+          "name": "OrderCreated",
+          "type": "distributed",
+          "description": "Raised when a new order is created",
+          "payload": [
+            {"name": "OrderId", "type": "Guid"},
+            {"name": "OrderNumber", "type": "string"},
+            {"name": "TotalAmount", "type": "decimal"}
+          ]
+        },
+        {
+          "name": "OrderStatusChanged",
+          "type": "distributed",
+          "description": "Raised when order status changes",
+          "payload": [
+            {"name": "OrderId", "type": "Guid"},
+            {"name": "OldStatus", "type": "int"},
+            {"name": "NewStatus", "type": "int"}
+          ]
+        }
+      ],
       "properties": [
         {
           "name": "OrderNumber",
@@ -301,14 +493,51 @@
           "name": "TotalAmount",
           "type": "decimal",
           "isRequired": true,
-          "nullable": false
+          "nullable": false,
+          "validationRules": [
+            {
+              "type": "Range",
+              "value": "0.01,999999.99",
+              "errorMessage": "Total amount must be greater than 0"
+            }
+          ]
         },
         {
           "name": "Status",
-          "type": "int",
+          "type": "OrderStatus",
           "isRequired": true,
           "nullable": false,
+          "isEnum": true,
+          "enumName": "OrderStatus",
           "defaultValue": "0"
+        },
+        {
+          "name": "ShippingAddress",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 500,
+          "nullable": false
+        },
+        {
+          "name": "CustomerEmail",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 100,
+          "nullable": false,
+          "validationRules": [
+            {
+              "type": "RegularExpression",
+              "value": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+              "errorMessage": "Invalid email format"
+            }
+          ]
+        },
+        {
+          "name": "Notes",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 1000,
+          "nullable": true
         }
       ],
       "relations": {
@@ -317,7 +546,8 @@
             "targetEntity": "OrderItem",
             "foreignKeyName": "OrderId",
             "navigationProperty": "OrderItems",
-            "isCollection": true
+            "isCollection": true,
+            "cascadeDelete": true
           }
         ]
       }
@@ -359,9 +589,119 @@
           "name": "TotalPrice",
           "type": "decimal",
           "isRequired": true,
+          "nullable": false,
+          "validationRules": [
+            {
+              "type": "Range",
+              "value": "0.01,999999.99",
+              "errorMessage": "Total price must be greater than 0"
+            }
+          ]
+        },
+        {
+          "name": "Discount",
+          "type": "decimal",
+          "isRequired": false,
+          "nullable": true,
+          "defaultValue": "0"
+        }
+      ]
+    },
+    {
+      "name": "Address",
+      "tableName": "Addresses",
+      "entityType": "ValueObject",
+      "properties": [
+        {
+          "name": "Street",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 200,
+          "nullable": false
+        },
+        {
+          "name": "City",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 100,
+          "nullable": false
+        },
+        {
+          "name": "State",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 100,
+          "nullable": true
+        },
+        {
+          "name": "PostalCode",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 20,
+          "nullable": false
+        },
+        {
+          "name": "Country",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 100,
           "nullable": false
         }
       ]
+    },
+    {
+      "name": "ProductImage",
+      "tableName": "ProductImages",
+      "entityType": "Entity",
+      "properties": [
+        {
+          "name": "ProductId",
+          "type": "Guid",
+          "isRequired": true,
+          "nullable": false,
+          "isForeignKey": true,
+          "targetEntity": "Product"
+        },
+        {
+          "name": "ImageUrl",
+          "type": "string",
+          "isRequired": true,
+          "maxLength": 500,
+          "nullable": false
+        },
+        {
+          "name": "AltText",
+          "type": "string",
+          "isRequired": false,
+          "maxLength": 200,
+          "nullable": true
+        },
+        {
+          "name": "DisplayOrder",
+          "type": "int",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "0"
+        },
+        {
+          "name": "IsPrimary",
+          "type": "bool",
+          "isRequired": true,
+          "nullable": false,
+          "defaultValue": "false"
+        }
+      ],
+      "relations": {
+        "manyToOne": [
+          {
+            "targetEntity": "Product",
+            "foreignKeyName": "ProductId",
+            "navigationProperty": "Product",
+            "isRequired": true,
+            "cascadeDelete": true
+          }
+        ]
+      }
     }
   ],
   "options": {
@@ -371,7 +711,7 @@
     "useExtraProperties": true,
     "useLocalization": true,
     "localizationCultures": ["en", "ar"],
-    "validationType": "fluentvalidation",
+    "validationType": "native",
     "generateEventHandlers": true,
     "generateIntegrationTests": true,
     "localizationMerge": {

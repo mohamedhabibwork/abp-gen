@@ -1,0 +1,6 @@
+{
+{{- range $index, $value := .Values}}
+  "{{if $value.LocalizationKey}}{{$value.LocalizationKey}}{{else}}{{$.EnumName}}.{{$value.Name}}{{end}}": "{{$value.Name}}"{{if ne $index (sub (len $.Values) 1)}},{{end}}
+{{- end}}
+}
+

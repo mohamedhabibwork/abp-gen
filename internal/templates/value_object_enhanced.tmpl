@@ -1,0 +1,63 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Volo.Abp.Domain.Values;
+using System.ComponentModel.DataAnnotations;
+
+namespace {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module
+{
+    public class {{.EntityName}} : ValueObject
+    {
+{{- range .Properties}}
+        {{- if .IsRequired}}
+        [Required]
+        {{- end}}
+        {{- if .MaxLength}}
+        [MaxLength({{.MaxLength}})]
+        {{- end}}
+        public {{.Type}}{{if .Nullable}}?{{end}} {{.Name}} { get; private set; }
+{{- end}}
+
+        protected {{.EntityName}}()
+        {
+        }
+
+        public {{.EntityName}}({{range $index, $prop := .Properties}}{{if $index}}, {{end}}{{$prop.Type}} {{$prop.Name | lowerFirst}}{{end}})
+        {
+{{- range .Properties}}
+            {{.Name}} = {{.Name | lowerFirst}};
+{{- end}}
+        }
+
+        protected override IEnumerable<object> GetAtomicValues()
+        {
+{{- if .Config.EqualityMembers}}
+            {{- range .Config.EqualityMembers}}
+            yield return {{.}};
+            {{- end}}
+{{- else}}
+            {{- range .Properties}}
+            yield return {{.Name}};
+            {{- end}}
+{{- end}}
+        }
+
+        {{- if .Config.GenerateComparison}}
+        public static bool operator ==({{.EntityName}} left, {{.EntityName}} right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=({{.EntityName}} left, {{.EntityName}} right)
+        {
+            return !Equals(left, right);
+        }
+        {{- end}}
+
+        public override string ToString()
+        {
+            return $"{{.EntityName}}({{range $index, $prop := .Properties}}{{if $index}}, {{end}}{{$prop.Name}}={{{{$prop.Name}}}}{{end}})";
+        }
+    }
+}
+

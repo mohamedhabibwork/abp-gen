@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/mohamedhabibwork/abp-gen/internal/detector"
 	"github.com/mohamedhabibwork/abp-gen/internal/schema"
@@ -63,6 +64,10 @@ func (g *EnumGenerator) Generate(sch *schema.Schema, entity *schema.Entity, path
 func (g *EnumGenerator) generateEnumClass(sch *schema.Schema, entity *schema.Entity, enum *schema.EnumDefinition, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("enum.tmpl")
 	if err != nil {
+		// If template not found, skip enum generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip enum generation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load enum template: %w", err)
 	}
 
@@ -91,6 +96,10 @@ func (g *EnumGenerator) generateEnumClass(sch *schema.Schema, entity *schema.Ent
 func (g *EnumGenerator) generateEnumLookup(sch *schema.Schema, entity *schema.Entity, enum *schema.EnumDefinition, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("enum_lookup.tmpl")
 	if err != nil {
+		// If template not found, skip lookup generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip lookup generation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load enum_lookup template: %w", err)
 	}
 
@@ -117,6 +126,10 @@ func (g *EnumGenerator) generateEnumLookup(sch *schema.Schema, entity *schema.En
 func (g *EnumGenerator) generateEnumLocalization(sch *schema.Schema, entity *schema.Entity, enum *schema.EnumDefinition, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("enum_localization.tmpl")
 	if err != nil {
+		// If template not found, skip localization generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip localization generation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load enum_localization template: %w", err)
 	}
 
@@ -145,6 +158,10 @@ func (g *EnumGenerator) generateEnumLocalization(sch *schema.Schema, entity *sch
 func (g *EnumGenerator) generateEnumDTO(sch *schema.Schema, entity *schema.Entity, enum *schema.EnumDefinition, paths *detector.LayerPaths) error {
 	tmpl, err := g.tmplLoader.Load("enum_dto.tmpl")
 	if err != nil {
+		// If template not found, skip DTO generation gracefully
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "file does not exist") {
+			return nil // Skip DTO generation if template doesn't exist
+		}
 		return fmt.Errorf("failed to load enum_dto template: %w", err)
 	}
 

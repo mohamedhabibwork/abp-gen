@@ -1,0 +1,41 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore;
+using {{.NamespaceRoot}}.Domain.Entities.{{.ModuleName}}Module;
+using {{.NamespaceRoot}}.Domain.Repositories.{{.ModuleName}}Module;
+
+namespace {{.NamespaceRoot}}.EntityFrameworkCore.Repositories.{{.ModuleName}}Module
+{
+    public class {{.EntityName}}CustomRepository : EfCore{{.EntityName}}Repository, I{{.EntityName}}CustomRepository
+    {
+        public {{.EntityName}}CustomRepository(IDbContextProvider<{{.ModuleName}}DbContext> dbContextProvider)
+            : base(dbContextProvider)
+        {
+        }
+
+{{- range .Methods}}
+        public async {{.ReturnType}} {{.Name}}({{range $index, $param := .Parameters}}{{if $index}}, {{end}}{{$param.Type}} {{$param.Name}}{{end}})
+        {
+            var dbSet = await GetDbSetAsync();
+            var query = dbSet.AsQueryable();
+            
+            {{- if .QueryHint}}
+            // {{.QueryHint}}
+            {{- end}}
+            
+            // TODO: Implement custom query logic
+            // Example:
+            // return await query
+            //     .Where(/* your conditions */)
+            //     .ToListAsync();
+            
+            throw new NotImplementedException("{{.Name}} is not yet implemented");
+        }
+{{- end}}
+    }
+}
+

@@ -20,6 +20,10 @@ using static {{.NamespaceRoot}}.Application.Contracts.Permissions.{{.ModuleName}
 using {{.NamespaceRoot}}.Events.{{.ModuleName}}Module;
 {{- end}}
 using Volo.Abp;
+using Volo.Abp.Domain.Entities;
+using Volo.Abp.Validation;
+using FluentValidation;
+using Microsoft.Extensions.Logging;
 
 namespace {{.NamespaceRoot}}.Application.Services.{{.ModuleName}}Module
 {
@@ -39,19 +43,22 @@ namespace {{.NamespaceRoot}}.Application.Services.{{.ModuleName}}Module
         private readonly IDistributedCache<List<{{.EntityName}}Dto>> _listCache;
         private readonly {{.EntityName}}Manager _manager;
         private readonly IDistributedEventBus _distributedEventBus;
+        private readonly ILogger<{{.EntityName}}AppService> _logger;
 
         public {{.EntityName}}AppService(
             IRepository<{{.EntityName}}, {{.PrimaryKeyType}}> repository,
             IDistributedCache<{{.EntityName}}Dto> cache,
             IDistributedCache<List<{{.EntityName}}Dto>> listCache,
             {{.EntityName}}Manager manager,
-            IDistributedEventBus distributedEventBus)
+            IDistributedEventBus distributedEventBus,
+            ILogger<{{.EntityName}}AppService> logger)
             : base(repository)
         {
             _cache = cache;
             _listCache = listCache;
             _manager = manager;
             _distributedEventBus = distributedEventBus;
+            _logger = logger;
 
             GetPolicyName = {{.EntityName}}Management.Default;
             GetListPolicyName = {{.EntityName}}Management.Default;
@@ -62,142 +69,286 @@ namespace {{.NamespaceRoot}}.Application.Services.{{.ModuleName}}Module
 
         public override async Task<{{.EntityName}}Dto> GetAsync({{.PrimaryKeyType}} id)
         {
-            var cacheKey = $"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}";
-            var cachedDto = await _cache.GetAsync(cacheKey);
+            _logger.LogInformation("Starting GetAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
             
-            if (cachedDto != null)
+            try
             {
-                return cachedDto;
-            }
-
-            var entity = await Repository.GetAsync(id);
-            var dto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Dto>(entity);
-            
-            // Set cache with expiration (optional: configure in appsettings.json)
-            await _cache.SetAsync(cacheKey, dto, new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-            });
-            
-            return dto;
-        }
-
-        public override async Task<PagedResultDto<{{.EntityName}}Dto>> GetListAsync(PagedAndSortedResultRequestDto input)
-        {
-            if (input.Sorting.IsNullOrWhiteSpace())
-            {
-                input.Sorting = {{.EntityName}}Constants.DefaultSorting;
-            }
-
-            // Try to get from list cache
-            var listCacheKey = {{.EntityName}}Constants.CacheKeys.ListCacheKey;
-            var cachedList = await _listCache.GetAsync(listCacheKey);
-            if (cachedList != null && input.SkipCount == 0 && input.MaxResultCount <= cachedList.Count)
-            {
-                // Return cached list if it matches the request
-                var pagedList = cachedList.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
-                return new PagedResultDto<{{.EntityName}}Dto>
+                var cacheKey = $"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}";
+                var cachedDto = await _cache.GetAsync(cacheKey);
+                
+                if (cachedDto != null)
                 {
-                    TotalCount = cachedList.Count,
-                    Items = pagedList
-                };
-            }
+                    _logger.LogInformation("Successfully retrieved {EntityName} from cache with Id: {Id}", "{{.EntityName}}", id);
+                    return cachedDto;
+                }
 
-            var result = await base.GetListAsync(input);
-
-            // Cache individual items
-            foreach (var dto in result.Items)
-            {
-                var cacheKey = $"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{dto.Id}";
+                var entity = await Repository.GetAsync(id);
+                var dto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Dto>(entity);
+                
+                // Set cache with expiration (optional: configure in appsettings.json)
                 await _cache.SetAsync(cacheKey, dto, new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
                 });
+                
+                _logger.LogInformation("Successfully completed GetAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                return dto;
             }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred while retrieving the item. Please try again later.");
+            }
+        }
 
-            return result;
+        public override async Task<PagedResultDto<{{.EntityName}}Dto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            _logger.LogInformation("Starting GetListAsync operation for {EntityName} with SkipCount: {SkipCount}, MaxResultCount: {MaxResultCount}", 
+                "{{.EntityName}}", input.SkipCount, input.MaxResultCount);
+            
+            try
+            {
+                if (input.Sorting.IsNullOrWhiteSpace())
+                {
+                    input.Sorting = {{.EntityName}}Constants.DefaultSorting;
+                }
+
+                // Try to get from list cache
+                var listCacheKey = {{.EntityName}}Constants.CacheKeys.ListCacheKey;
+                var cachedList = await _listCache.GetAsync(listCacheKey);
+                if (cachedList != null && input.SkipCount == 0 && input.MaxResultCount <= cachedList.Count)
+                {
+                    // Return cached list if it matches the request
+                    var pagedList = cachedList.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
+                    _logger.LogInformation("Successfully retrieved {EntityName} list from cache with {Count} items", "{{.EntityName}}", pagedList.Count);
+                    return new PagedResultDto<{{.EntityName}}Dto>
+                    {
+                        TotalCount = cachedList.Count,
+                        Items = pagedList
+                    };
+                }
+
+                var result = await base.GetListAsync(input);
+
+                // Cache individual items
+                foreach (var dto in result.Items)
+                {
+                    var cacheKey = $"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{dto.Id}";
+                    await _cache.SetAsync(cacheKey, dto, new DistributedCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                    });
+                }
+
+                _logger.LogInformation("Successfully completed GetListAsync operation for {EntityName} with {TotalCount} total items", 
+                    "{{.EntityName}}", result.TotalCount);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetListAsync operation for {EntityName}", "{{.EntityName}}");
+                throw new UserFriendlyException("An unexpected error occurred while retrieving the list. Please try again later.");
+            }
         }
 
         public override async Task<{{.EntityName}}Dto> CreateAsync(Create{{.EntityName}}Dto input)
         {
-            await CheckCreatePolicyAsync();
+            _logger.LogInformation("Starting CreateAsync operation for {EntityName}", "{{.EntityName}}");
+            
+            try
+            {
+                await CheckCreatePolicyAsync();
 
-            // FluentValidation is automatically called by ABP framework
-            // Validator: Create{{.EntityName}}DtoValidator
+                // FluentValidation is automatically called by ABP framework
+                // Validator: Create{{.EntityName}}DtoValidator
 
-            // Use manager for business logic
-            var entity = await _manager.CreateAsync(
+                // Use manager for business logic
+                var entity = await _manager.CreateAsync(
 {{- if eq .PrimaryKeyType "Guid"}}
-                GuidGenerator.Create(){{range .NonForeignKeyProperties}},
-                input.{{.Name}}{{end}}
+                    GuidGenerator.Create(){{range .NonForeignKeyProperties}},
+                    input.{{.Name}}{{end}}
 {{- else}}
-                0{{range .NonForeignKeyProperties}},
-                input.{{.Name}}{{end}}
+                    0{{range .NonForeignKeyProperties}},
+                    input.{{.Name}}{{end}}
 {{- end}}
-            );
+                );
 
-            await Repository.InsertAsync(entity, autoSave: true);
+                await Repository.InsertAsync(entity, autoSave: true);
 
-            // Clear caches
-            await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
+                // Clear caches
+                await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
 {{- if .HasEvents}}
 
-            // Publish distributed event via event bus
-            var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
-            eto.CreationTime = DateTime.UtcNow;
-            await _distributedEventBus.PublishAsync(eto);
+                // Publish distributed event via event bus
+                var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
+                eto.CreationTime = DateTime.UtcNow;
+                await _distributedEventBus.PublishAsync(eto);
 {{- end}}            
-            return await MapToGetOutputDtoAsync(entity);
+                var result = await MapToGetOutputDtoAsync(entity);
+                _logger.LogInformation("Successfully completed CreateAsync operation for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", entity.Id);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in CreateAsync operation for {EntityName}", "{{.EntityName}}");
+                throw new UserFriendlyException("An unexpected error occurred while creating the item. Please try again later.");
+            }
         }
 
         public override async Task<{{.EntityName}}Dto> UpdateAsync({{.PrimaryKeyType}} id, Update{{.EntityName}}Dto input)
         {
-            await CheckUpdatePolicyAsync();
+            _logger.LogInformation("Starting UpdateAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+            
+            try
+            {
+                await CheckUpdatePolicyAsync();
 
-            // FluentValidation is automatically called by ABP framework
-            // Validator: Update{{.EntityName}}DtoValidator
+                // FluentValidation is automatically called by ABP framework
+                // Validator: Update{{.EntityName}}DtoValidator
 
-            var entity = await GetEntityByIdAsync(id);
+                var entity = await GetEntityByIdAsync(id);
 
-            // Use manager for business logic
-            await _manager.UpdateAsync(
-                entity{{range .NonForeignKeyProperties}},
-                input.{{.Name}}{{end}}
-            );
+                // Use manager for business logic
+                await _manager.UpdateAsync(
+                    entity{{range .NonForeignKeyProperties}},
+                    input.{{.Name}}{{end}}
+                );
 
-            await Repository.UpdateAsync(entity, autoSave: true);
+                await Repository.UpdateAsync(entity, autoSave: true);
 
-            // Clear caches
-            await _cache.RemoveAsync($"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}");
-            await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
+                // Clear caches
+                await _cache.RemoveAsync($"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}");
+                await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
 {{- if .HasEvents}}
 
-            // Publish distributed event via event bus
-            var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
-            eto.LastModificationTime = DateTime.UtcNow;
-            await _distributedEventBus.PublishAsync(eto);
+                // Publish distributed event via event bus
+                var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
+                eto.LastModificationTime = DateTime.UtcNow;
+                await _distributedEventBus.PublishAsync(eto);
 {{- end}}            
-            return await MapToGetOutputDtoAsync(entity);
+                var result = await MapToGetOutputDtoAsync(entity);
+                _logger.LogInformation("Successfully completed UpdateAsync operation for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", id);
+                return result;
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in UpdateAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred while updating the item. Please try again later.");
+            }
         }
 
         public override async Task DeleteAsync({{.PrimaryKeyType}} id)
         {
-            await CheckDeletePolicyAsync();
+            _logger.LogInformation("Starting DeleteAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+            
+            try
+            {
+                await CheckDeletePolicyAsync();
 
-            var entity = await GetEntityByIdAsync(id);
+                var entity = await GetEntityByIdAsync(id);
 
-            // Use manager for business logic (e.g., validation, cascade delete)
-            await _manager.DeleteAsync(entity);
+                // Use manager for business logic (e.g., validation, cascade delete)
+                await _manager.DeleteAsync(entity);
 
-            // Clear caches
-            await _cache.RemoveAsync($"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}");
-            await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
+                // Clear caches
+                await _cache.RemoveAsync($"{ {{.EntityName}}Constants.CacheKeys.SingleKey}:{id}");
+                await _listCache.RemoveAsync({{.EntityName}}Constants.CacheKeys.ListCacheKey);
 {{- if .HasEvents}}
 
-            // Publish distributed event via event bus
-            var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
-            await _distributedEventBus.PublishAsync(eto);
+                // Publish distributed event via event bus
+                var eto = ObjectMapper.Map<{{.EntityName}}, {{.EntityName}}Eto>(entity);
+                await _distributedEventBus.PublishAsync(eto);
 {{- end}}
+                _logger.LogInformation("Successfully completed DeleteAsync operation for {EntityName} with Id: {Id}", 
+                    "{{.EntityName}}", id);
+            }
+            catch (BusinessException)
+            {
+                throw;
+            }
+            catch (EntityNotFoundException)
+            {
+                throw;
+            }
+            catch (AbpValidationException)
+            {
+                throw;
+            }
+            catch (ValidationException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in DeleteAsync operation for {EntityName} with Id: {Id}", "{{.EntityName}}", id);
+                throw new UserFriendlyException("An unexpected error occurred while deleting the item. Please try again later.");
+            }
         }
 {{- if ne .EntityType "Entity"}}
 
